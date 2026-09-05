@@ -1,0 +1,17 @@
+{
+  "name": "resenas-ai",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Servicio V1 que genera respuestas a reseñas de Google y resume patrones.",
+  "type": "module",
+  "main": "src/indice.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsc --noEmit && node --import tsx --test \"test/*.test.ts\""
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
