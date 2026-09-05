@@ -30,6 +30,12 @@ import {
   type RevisionOk,
   type RevisionRechazada,
 } from "./revisarRespuesta.js";
+import {
+  detectarInyeccion,
+  type ResultadoDeteccion,
+  type IntentoDeInyeccion,
+  type CategoriaInyeccion,
+} from "./detectarInyeccion.js";
 
 export const version: string = "0.0.0";
 
@@ -40,6 +46,7 @@ export {
   construirPrompt,
   RedactorFalso,
   revisar,
+  detectarInyeccion,
 };
 export type {
   ReseñaNegocio,
@@ -58,4 +65,7 @@ export type {
   ResultadoRevision,
   RevisionOk,
   RevisionRechazada,
+  ResultadoDeteccion,
+  IntentoDeInyeccion,
+  CategoriaInyeccion,
 };
