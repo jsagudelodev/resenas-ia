@@ -47,6 +47,8 @@ import {
   type Idioma,
   type ResultadoDeteccionIdioma,
 } from "./detectorIdioma.js";
+import { procesarLote } from "./procesarLote.js";
+import type { ResultadoProcesamientoLote } from "./procesarLote.js";
 
 export const version: string = "0.0.0";
 
@@ -86,4 +88,5 @@ export type {
   CategoriaInyeccion,
   Idioma,
   ResultadoDeteccionIdioma,
+  ResultadoProcesamientoLote,
 };
