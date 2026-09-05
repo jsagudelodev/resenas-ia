@@ -209,7 +209,7 @@ minuto del dueño; una publicada de más no se recoge.
   componen; (3) el resumen **no inventa**: con dos reseñas no dice que haya un
   patrón, dice que no hay suficientes.
 
-- ⬜ **RS.10 — Que dos veces la misma reseña dé la misma respuesta.**
+- ✅ **RS.10 — Que dos veces la misma reseña dé la misma respuesta.**
   El dueño reenvía el lote con dos reseñas nuevas; las 28 de antes no se
   vuelven a pagar ni a redactar.
   *Cierre:* (1) el mismo lote procesado dos veces llama al LLM **la segunda vez
