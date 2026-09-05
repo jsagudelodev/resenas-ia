@@ -56,6 +56,14 @@ import {
   type MotivoQueja,
 } from "./resumirQuejas.js";
 
+import {
+  claveDePrompt,
+  AlmacenRespuestasEnMemoria,
+  AlmacenRespuestasSqlite,
+  RedactorConMemoria,
+  type AlmacenRespuestas,
+} from "./almacenRespuestas.js";
+
 export const version: string = "0.0.0";
 
 export {
@@ -70,6 +78,10 @@ export {
   detectarIdioma,
   procesarLote,
   resumirQuejas,
+  claveDePrompt,
+  AlmacenRespuestasEnMemoria,
+  AlmacenRespuestasSqlite,
+  RedactorConMemoria,
 };
 export type {
   ReseñaNegocio,
@@ -99,5 +111,6 @@ export type {
   ResultadoProcesamientoLote,
   ResumenDeQuejas,
   MotivoQueja,
+  AlmacenRespuestas,
 };
 export { UMBRAL_MINIMO_DEFECTO };
