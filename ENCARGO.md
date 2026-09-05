@@ -201,7 +201,7 @@ minuto del dueño; una publicada de más no se recoge.
   respuesta; (3) el lote dice cuántas quedaron listas, cuántas para revisión y
   cuántas fallaron.
 
-- ⬜ **RS.9 — El resumen de qué se queja la gente.**
+- ✅ **RS.9 — El resumen de qué se queja la gente.**
   El segundo entregable, y el que abre la venta siguiente.
   *Cierre:* (1) sobre un lote de prueba, el resumen dice los motivos que se
   repiten y cuántas reseñas hay en cada uno; (2) **cada cifra se puede
