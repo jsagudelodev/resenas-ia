@@ -149,7 +149,7 @@ minuto del dueño; una publicada de más no se recoge.
   es un valor cerrado y un tono desconocido se rechaza con motivo; (3) la ficha
   se valida **sin** llamar a ningún modelo.
 
-- ⬜ **RS.3 — La respuesta redactada.**
+- ✅ **RS.3 — La respuesta redactada.**
   Aquí entra el LLM: una reseña más la ficha producen una respuesta lista para
   pegar.
   *Cierre:* (1) para una reseña de 5 estrellas y una de 1 estrella, se produce
