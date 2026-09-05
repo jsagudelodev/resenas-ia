@@ -194,7 +194,7 @@ minuto del dueño; una publicada de más no se recoge.
   (3) una reseña de tres palabras («Muy bueno») no rompe la detección: si no se
   puede decidir, se usa el idioma por defecto de la ficha y se dice.
 
-- ⬜ **RS.8 — El lote entero, de una vez.**
+- ✅ **RS.8 — El lote entero, de una vez.**
   30 reseñas entran, 30 resultados salen.
   *Cierre:* (1) el lote devuelve un resultado por reseña, en el mismo orden que
   entraron; (2) una reseña que falla **no tumba el lote** y las demás traen su
