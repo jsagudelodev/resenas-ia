@@ -1,8 +1,30 @@
 // Punto de entrada público del paquete.
-// RS.0: por ahora expone la versión y reexporta lo ya disponible de RS.1.
+// RS.0: expone la versión y reexporta lo ya disponible de RS.1.
+// RS.2: reexporta además la ficha del negocio.
 import { convertirReseñas, type ReseñaNegocio } from "./convertirReseñas.js";
+import {
+  validarFicha,
+  type FichaNegocio,
+  type FichaValida,
+  type FichaInvalida,
+  type ResultadoValidacionFicha,
+  type Tono,
+  type Contacto,
+  type LoQueOfrece,
+  type LoQueNoOfrece,
+} from "./fichaNegocio.js";
 
 export const version: string = "0.0.0";
 
-export { convertirReseñas };
-export type { ReseñaNegocio };
+export { convertirReseñas, validarFicha };
+export type {
+  ReseñaNegocio,
+  FichaNegocio,
+  FichaValida,
+  FichaInvalida,
+  ResultadoValidacionFicha,
+  Tono,
+  Contacto,
+  LoQueOfrece,
+  LoQueNoOfrece,
+};
