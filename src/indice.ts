@@ -19,7 +19,13 @@ import {
   type ResultadoRedaccion,
   type RespuestaLista,
   type RespuestaNoDisponible,
+  type RespuestaParaRevision,
 } from "./generarRespuesta.js";
+import {
+  detectarGravedad,
+  type CategoriaGravedad,
+  type ResultadoGravedad,
+} from "./detectorGravedad.js";
 import {
   RedactorFalso,
   type Redactor,
@@ -47,6 +53,7 @@ export {
   RedactorFalso,
   revisar,
   detectarInyeccion,
+  detectarGravedad,
 };
 export type {
   ReseñaNegocio,
@@ -61,6 +68,9 @@ export type {
   ResultadoRedaccion,
   RespuestaLista,
   RespuestaNoDisponible,
+  RespuestaParaRevision,
+  CategoriaGravedad,
+  ResultadoGravedad,
   Redactor,
   ResultadoRevision,
   RevisionOk,

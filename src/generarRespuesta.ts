@@ -10,6 +10,7 @@ import type { FichaNegocio } from "./fichaNegocio.js";
 import type { Redactor } from "./redactor.js";
 import { revisar } from "./revisarRespuesta.js";
 import { detectarInyeccion, type IntentoDeInyeccion, type ResultadoDeteccion } from "./detectarInyeccion.js";
+import { detectarGravedad, type ResultadoGravedad } from "./detectorGravedad.js";
 
 export interface RespuestaLista {
   /** Texto listo para pegar. */
@@ -35,7 +36,32 @@ export interface RespuestaNoDisponible {
   intentoDeInyeccion: ReadonlyArray<IntentoDeInyeccion>;
 }
 
-export type ResultadoRedaccion = RespuestaLista | RespuestaNoDisponible;
+/**
+ * RS.6 — Respuesta marcada para revisión humana.
+ *
+ * La reseña trae una acusación grave (intoxicación, cobro indebido, trato
+ * discriminatorio, abogados). El borrador se entrega —el dueño no quiere
+ * partir de una hoja en blanco— pero NO como respuesta lista para pegar:
+ * §4 del encargo lo prohíbe explícitamente. El motivo de la marca viaja con
+ * la reseña (punto 3 del cierre), no solo la marca.
+ */
+export interface RespuestaParaRevision {
+  /** `true` cuando hay que mirar esto antes de publicar. */
+  revisionHumana: true;
+  /** Borrador redactado por el redactor. No está listo para pegar. */
+  borrador: string;
+  /** Motivo legible de la marca, compuesto a partir de `acusaciones`. */
+  motivo: string;
+  /** Cada acusación detectada, con su categoría, motivo y muestra. */
+  acusaciones: ReadonlyArray<ResultadoGravedad>;
+  /** Intentos de inyección (RS.5) de la misma reseña, si los hubo. */
+  intentoDeInyeccion: ReadonlyArray<IntentoDeInyeccion>;
+}
+
+export type ResultadoRedaccion =
+  | RespuestaLista
+  | RespuestaNoDisponible
+  | RespuestaParaRevision;
 
 /**
  * Redacta una respuesta a una reseña usando el redactor que se le pasa.
@@ -79,6 +105,22 @@ export async function generarRespuesta(
       return {
         noDisponible: true,
         motivo: `la respuesta fue retenida por la revisión: ${revision.motivo}`,
+        intentoDeInyeccion: deteccion.intentos,
+      };
+    }
+    // RS.6: la respuesta pasó la revisión de RS.4, pero eso no basta. Si la
+    // RESEÑA alega algo grave (intoxicación, cobro indebido, trato
+    // discriminatorio, abogados), no se entrega como lista para pegar: se
+    // entrega como borrador CON la marca de revisión humana y el motivo
+    // viajando con ella. El borrador se produce igual —el dueño no parte de
+    // una hoja en blanco— pero la marca dice "esto no se publica sin leerlo".
+    const acusaciones = detectarGravedad(reseña.texto);
+    if (acusaciones.length > 0) {
+      return {
+        revisionHumana: true,
+        borrador: limpio,
+        motivo: construirMotivoRevision(acusaciones),
+        acusaciones,
         intentoDeInyeccion: deteccion.intentos,
       };
     }
@@ -148,6 +190,20 @@ const REGLAS_SANEAMIENTO: ReadonlyArray<RegExp> = [
   /\b(escribe|di|afirma|publica|dile|diles|escribir|decir|afirmar|publicar|write|say|state|publish|tell)\b[^.\n]{0,80}\b(que\s+(este|el|la|ha|hemos|han|estamos|est[aá]n)|that\s+(this|it|we|they))\b[^.\n]{0,80}\b(horrible|terrible|malo|peor|pesimo|cerrad[ao]|cerramos|cierran|roban|estaf|sucio|enferm[eo]|peligroso|scam|fraud|closed|shut|dirty|dangerous|the\s+worst|terrible)\b/gi,
   /\b(di|escrie|write|state|say)\b[^.\n]{0,40}\b(que\s+)?(hemos\s+cerrad[ao]|esta[n]?\s+sucios?|este\s+sitio\s+es\s+horrible|the\s+worst|we'?ve\s+closed)\b/gi,
 ];
+
+/**
+ * Compone el motivo legible de la marca de revisión humana (RS.6, punto 3):
+ * el motivo VIAJA con la reseña, no solo la marca. Una línea por acusación,
+ * para que el dueño sepa exactamente qué tiene que mirar.
+ */
+function construirMotivoRevision(
+  acusaciones: ReadonlyArray<ResultadoGravedad>,
+): string {
+  const detalle = acusaciones
+    .map((a) => `${a.categoria}: ${a.motivo}`)
+    .join(" ");
+  return `la reseña alega una acusación grave y no se responde sola — ${detalle}`;
+}
 
 function sanearConReglas(texto: string): string {
   let out = texto;
