@@ -127,7 +127,7 @@ minuto del dueño; una publicada de más no se recoge.
 > **15 ítems, de `RS.0` a `RS.14`.** Cada uno pide **una** cosa. Lo que no está
 > en la línea `Cierre:` no se hace.
 
-- ⬜ **RS.0 — Levantar el proyecto.**
+- ✅ **RS.0 — Levantar el proyecto.**
   Estructura del paquete, dependencias declaradas, TypeScript en `strict` y la
   suite corriendo en vacío.
   *Cierre:* (1) `npm test` corre y pasa desde un clon limpio, e **incluye
