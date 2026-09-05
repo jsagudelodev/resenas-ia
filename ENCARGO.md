@@ -159,7 +159,7 @@ minuto del dueño; una publicada de más no se recoge.
   **sigue funcionando** y esa reseña queda sin respuesta y marcada, en vez de
   fallar.
 
-- ⬜ **RS.4 — La respuesta que no se puede publicar.**
+- ✅ **RS.4 — La respuesta que no se puede publicar.**
   Este es el criterio de vendible, y no se cumple pidiéndoselo al modelo: hay que
   **revisar la salida antes de entregarla**. Una respuesta que admite culpa,
   promete dinero o un descuento, o afirma un dato que no está en la ficha, **no
