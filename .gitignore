@@ -2,3 +2,6 @@ node_modules/
 dist/
 *.log
 .env
+logs/
+memoria.db
+.argos/
