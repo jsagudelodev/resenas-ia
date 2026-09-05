@@ -24,6 +24,12 @@ import {
   RedactorFalso,
   type Redactor,
 } from "./redactor.js";
+import {
+  revisar,
+  type ResultadoRevision,
+  type RevisionOk,
+  type RevisionRechazada,
+} from "./revisarRespuesta.js";
 
 export const version: string = "0.0.0";
 
@@ -33,6 +39,7 @@ export {
   generarRespuesta,
   construirPrompt,
   RedactorFalso,
+  revisar,
 };
 export type {
   ReseñaNegocio,
@@ -48,4 +55,7 @@ export type {
   RespuestaLista,
   RespuestaNoDisponible,
   Redactor,
+  ResultadoRevision,
+  RevisionOk,
+  RevisionRechazada,
 };

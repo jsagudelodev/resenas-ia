@@ -8,6 +8,7 @@
 import type { ReseñaNegocio } from "./convertirReseñas.js";
 import type { FichaNegocio } from "./fichaNegocio.js";
 import type { Redactor } from "./redactor.js";
+import { revisar } from "./revisarRespuesta.js";
 
 export interface RespuestaLista {
   /** Texto listo para pegar. */
@@ -48,7 +49,18 @@ export async function generarRespuesta(
         motivo: "el redactor devolvió una respuesta vacía.",
       };
     }
-    return { texto: texto.trim() };
+    const limpio = texto.trim();
+    // RS.4: revisar antes de entregar. Si la respuesta admite culpa, promete
+    // dinero o un dato que no está en la ficha, no se publica: se devuelve
+    // `noDisponible` con el motivo, y el lote sigue.
+    const revision = revisar(limpio, ficha);
+    if (!revision.ok) {
+      return {
+        noDisponible: true,
+        motivo: `la respuesta fue retenida por la revisión: ${revision.motivo}`,
+      };
+    }
+    return { texto: limpio };
   } catch (error: unknown) {
     const motivo = error instanceof Error
       ? `el redactor no pudo producir la respuesta: ${error.message}`
