@@ -134,7 +134,7 @@ minuto del dueño; una publicada de más no se recoge.
   `tsc --noEmit`**; (2) `tsconfig.json` con `strict: true`; (3) hay un test que
   importa el módulo raíz del paquete y comprueba que expone algo.
 
-- ⬜ **RS.1 — Las reseñas entran, vengan como vengan.**
+- ✅ **RS.1 — Las reseñas entran, vengan como vengan.**
   Un lote llega como CSV exportado de cualquier sitio o como texto pegado con
   varias reseñas seguidas. Hay que convertirlo en una lista de reseñas.
   *Cierre:* (1) el mismo lote en CSV y en texto pegado produce la misma lista;
