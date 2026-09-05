@@ -188,7 +188,7 @@ minuto del dueño; una publicada de más no se recoge.
   se marca — la marca tiene que significar algo; (3) el motivo de la marca viaja
   con la reseña, no solo la marca.
 
-- ⬜ **RS.7 — Responder en el idioma de la reseña.**
+- ✅ **RS.7 — Responder en el idioma de la reseña.**
   *Cierre:* (1) una reseña en inglés recibe respuesta en inglés y una en español
   en español; (2) el idioma se **detecta**, no se configura por lote;
   (3) una reseña de tres palabras («Muy bueno») no rompe la detección: si no se
