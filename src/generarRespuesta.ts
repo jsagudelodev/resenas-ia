@@ -11,10 +11,17 @@ import type { Redactor } from "./redactor.js";
 import { revisar } from "./revisarRespuesta.js";
 import { detectarInyeccion, type IntentoDeInyeccion, type ResultadoDeteccion } from "./detectarInyeccion.js";
 import { detectarGravedad, type ResultadoGravedad } from "./detectorGravedad.js";
+import { detectarIdioma, type Idioma } from "./detectorIdioma.js";
 
 export interface RespuestaLista {
   /** Texto listo para pegar. */
   texto: string;
+  /**
+   * Idioma en el que está redactada la respuesta. Detectado a partir de la
+   * reseña, o el idioma por defecto de la ficha si la detección no fue
+   * concluyente (RS.7). Viaja con la respuesta, no solo con la detección.
+   */
+  idioma: Idioma;
   /**
    * Si la reseña llevaba instrucciones disfrazadas (RS.5), el intento se
    * registra aquí. Vacío si no se detectó nada. La respuesta IGUAL SE
@@ -29,6 +36,11 @@ export interface RespuestaNoDisponible {
   noDisponible: true;
   /** Motivo legible para registrar en la reseña marcada. */
   motivo: string;
+  /**
+   * Idioma en el que se pidió la respuesta, para que el lote pueda
+   * registrar qué idioma se aplicó a esta reseña.
+   */
+  idioma: Idioma;
   /**
    * Si la reseña llevaba instrucciones disfrazadas, se listan aquí también:
    * la reseña marcada como «no disponible» debe poder explicar por qué.
@@ -52,6 +64,11 @@ export interface RespuestaParaRevision {
   borrador: string;
   /** Motivo legible de la marca, compuesto a partir de `acusaciones`. */
   motivo: string;
+  /**
+   * Idioma en el que se redactó el borrador (RS.7). El dueño lo necesita
+   * para revisarlo: si está en el idioma equivocado, no le sirve.
+   */
+  idioma: Idioma;
   /** Cada acusación detectada, con su categoría, motivo y muestra. */
   acusaciones: ReadonlyArray<ResultadoGravedad>;
   /** Intentos de inyección (RS.5) de la misma reseña, si los hubo. */
@@ -86,13 +103,19 @@ export async function generarRespuesta(
   // no pueda seguirlas. La reseña original queda intacta para auditoría:
   // el intento se REGISTRA en el resultado de esta reseña.
   const deteccion = detectarInyeccion(reseña.texto);
-  const prompt = construirPrompt(reseña, ficha, deteccion);
+  // RS.7: detectamos el idioma de la reseña. Si el detector no se decide, se
+  // usa el idioma por defecto de la ficha. El idioma VIAJA en el prompt
+  // para que el redactor sepa en qué idioma responder, y viaja también en
+  // el resultado para que el lote pueda registrarlo.
+  const idiomaRes = detectarIdioma(reseña.texto, ficha.idiomaPorDefecto);
+  const prompt = construirPrompt(reseña, ficha, deteccion, idiomaRes.idioma);
   try {
     const texto = await redactor.redactar(prompt);
     if (typeof texto !== "string" || texto.trim().length === 0) {
       return {
         noDisponible: true,
         motivo: "el redactor devolvió una respuesta vacía.",
+        idioma: idiomaRes.idioma,
         intentoDeInyeccion: deteccion.intentos,
       };
     }
@@ -105,6 +128,7 @@ export async function generarRespuesta(
       return {
         noDisponible: true,
         motivo: `la respuesta fue retenida por la revisión: ${revision.motivo}`,
+        idioma: idiomaRes.idioma,
         intentoDeInyeccion: deteccion.intentos,
       };
     }
@@ -120,11 +144,16 @@ export async function generarRespuesta(
         revisionHumana: true,
         borrador: limpio,
         motivo: construirMotivoRevision(acusaciones),
+        idioma: idiomaRes.idioma,
         acusaciones,
         intentoDeInyeccion: deteccion.intentos,
       };
     }
-    return { texto: limpio, intentoDeInyeccion: deteccion.intentos };
+    return {
+      texto: limpio,
+      idioma: idiomaRes.idioma,
+      intentoDeInyeccion: deteccion.intentos,
+    };
   } catch (error: unknown) {
     const motivo = error instanceof Error
       ? `el redactor no pudo producir la respuesta: ${error.message}`
@@ -132,6 +161,7 @@ export async function generarRespuesta(
     return {
       noDisponible: true,
       motivo,
+      idioma: idiomaRes.idioma,
       intentoDeInyeccion: deteccion.intentos,
     };
   }
@@ -146,6 +176,7 @@ export function construirPrompt(
   reseña: ReseñaNegocio,
   ficha: FichaNegocio,
   deteccion: ResultadoDeteccion = { intentos: [] },
+  idioma: Idioma = "es",
 ): string {
   const estrellasTxt = reseña.estrellas === null ? "no indicadas" : String(reseña.estrellas);
   const fechaTxt = reseña.fecha ?? "no indicada";
@@ -154,6 +185,10 @@ export function construirPrompt(
     `Nombre del negocio: ${ficha.nombre}`,
     `Actividad: ${ficha.actividad}`,
     `Tono: ${ficha.tono}`,
+    // RS.7: el idioma en el que se debe responder, ya decidido a partir de
+    // la reseña (o del idioma por defecto de la ficha). Va en el prompt
+    // para que el redactor lo sepa sin tener que detectarlo él mismo.
+    `Idioma de la respuesta: ${idioma}`,
     `Estrellas: ${estrellasTxt}`,
     `Fecha: ${fechaTxt}`,
     `Reseña de ${reseña.autor || "anónimo"}: ${textoParaRedactor}`,

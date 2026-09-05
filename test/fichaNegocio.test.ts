@@ -13,6 +13,9 @@ const fichaCompleta: FichaNegocio = {
   contacto: { telefono: "555-0100", correo: "hola@laesquina.test" },
   ofrece: { gestos: ["repetir el plato", "invitar un café"] },
   noOfrece: { gestos: ["devoluciones en efectivo"] },
+  // RS.7: idioma por defecto. Se declara explícito para que el objeto cumpla
+  // con el tipo `FichaNegocio` (ahora obligatorio).
+  idiomaPorDefecto: "es",
 };
 
 test("ficha completa devuelve ok=true con faltantes vacío", () => {

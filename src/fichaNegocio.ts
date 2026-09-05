@@ -40,6 +40,13 @@ export interface FichaNegocio {
   contacto: Contacto;
   ofrece: LoQueOfrece;
   noOfrece: LoQueNoOfrece;
+  /**
+   * Idioma en el que el negocio quiere responder cuando NO se puede
+   * detectar el idioma de la reseña (RS.7, punto 3). Si la ficha no lo
+   * indica, queda como `"es"`. La detección por reseña manda sobre este
+   * valor cuando funciona.
+   */
+  idiomaPorDefecto: "es" | "en";
 }
 
 export interface FichaValida {
@@ -178,6 +185,28 @@ export function validarFicha(entrada: unknown): ResultadoValidacionFicha {
     return { ok: false, motivo: noOfrece };
   }
 
+  // RS.7: idioma por defecto de la ficha. Si no viene, "es". Si viene pero
+  // no es un idioma conocido, se rechaza la ficha (mismo criterio que el
+  // tono: valor cerrado).
+  const idiomaPorDefectoCrudo = obj["idiomaPorDefecto"];
+  let idiomaPorDefecto: "es" | "en" = "es";
+  if (idiomaPorDefectoCrudo !== undefined) {
+    if (typeof idiomaPorDefectoCrudo !== "string") {
+      return {
+        ok: false,
+        motivo: "el campo 'idiomaPorDefecto' debe ser texto ('es' o 'en').",
+      };
+    }
+    const normalizado = idiomaPorDefectoCrudo.trim().toLowerCase();
+    if (normalizado !== "es" && normalizado !== "en") {
+      return {
+        ok: false,
+        motivo: `el idioma por defecto "${idiomaPorDefectoCrudo}" no es válido; use "es" o "en".`,
+      };
+    }
+    idiomaPorDefecto = normalizado;
+  }
+
   const ficha: FichaNegocio = {
     nombre,
     actividad,
@@ -185,6 +214,7 @@ export function validarFicha(entrada: unknown): ResultadoValidacionFicha {
     contacto,
     ofrece,
     noOfrece,
+    idiomaPorDefecto,
   };
 
   return { ok: true, ficha, faltantes };

@@ -37,6 +37,8 @@ const ficha: FichaNegocio = {
   },
   ofrece: { gestos: ["repetir el plato"] },
   noOfrece: { gestos: ["devoluciones en efectivo"] },
+  // RS.7: idioma por defecto.
+  idiomaPorDefecto: "es",
 };
 
 // Reseña de 5⭐ reutilizable.

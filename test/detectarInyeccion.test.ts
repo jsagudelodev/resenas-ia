@@ -17,6 +17,8 @@ const ficha: FichaNegocio = {
   contacto: { telefono: "555-0100" },
   ofrece: { gestos: ["repetir el plato"] },
   noOfrece: { gestos: ["devoluciones en efectivo"] },
+  // RS.7: idioma por defecto.
+  idiomaPorDefecto: "es",
 };
 
 function reseña(texto: string): ReseñaNegocio {

@@ -35,6 +35,9 @@ export class RedactorFalso implements Redactor {
   async redactar(prompt: string): Promise<string> {
     const nombre = extraerNombreDelNegocio(prompt);
     const estrellas = extraerEstrellas(prompt);
+    // RS.7: el idioma viene ya decidido en el prompt. Si el prompt no lo
+    // trae, asumimos español (compatibilidad con prompts antiguos).
+    const idioma = extraerIdiomaDelPrompt(prompt);
 
     if (nombre === null) {
       throw new Error("prompt sin nombre del negocio");
@@ -43,27 +46,57 @@ export class RedactorFalso implements Redactor {
       throw new Error("prompt sin estrellas de la reseña");
     }
 
-    if (estrellas >= 4) {
-      return (
-        `Gracias por su reseña, ${nombre}. ` +
-        `Nos alegra mucho saber que la experiencia fue positiva. ` +
-        `Esperamos volver a atenderle pronto.`
-      );
+    if (idioma === "en") {
+      return redactarEnIngles(nombre, estrellas);
     }
-    if (estrellas <= 2) {
-      return (
-        `Gracias por su reseña, ${nombre}. ` +
-        `Lamentamos que la experiencia no haya sido la esperada y ` +
-        `tomamos nota para mejorar. ` +
-        `Nos gustaría escucharle y resolver lo ocurrido.`
-      );
-    }
-    // 3 estrellas: neutro
+    return redactarEnEspanol(nombre, estrellas);
+  }
+}
+
+function redactarEnEspanol(nombre: string, estrellas: number): string {
+  if (estrellas >= 4) {
     return (
       `Gracias por su reseña, ${nombre}. ` +
-      `Tomamos nota de su comentario para seguir mejorando.`
+      `Nos alegra mucho saber que la experiencia fue positiva. ` +
+      `Esperamos volver a atenderle pronto.`
     );
   }
+  if (estrellas <= 2) {
+    return (
+      `Gracias por su reseña, ${nombre}. ` +
+      `Lamentamos que la experiencia no haya sido la esperada y ` +
+      `tomamos nota para mejorar. ` +
+      `Nos gustaría escucharle y resolver lo ocurrido.`
+    );
+  }
+  // 3 estrellas: neutro
+  return (
+    `Gracias por su reseña, ${nombre}. ` +
+    `Tomamos nota de su comentario para seguir mejorando.`
+  );
+}
+
+function redactarEnIngles(nombre: string, estrellas: number): string {
+  if (estrellas >= 4) {
+    return (
+      `Thank you for your review, ${nombre}. ` +
+      `We are very glad to hear the experience was positive. ` +
+      `We hope to serve you again soon.`
+    );
+  }
+  if (estrellas <= 2) {
+    return (
+      `Thank you for your review, ${nombre}. ` +
+      `We are sorry the experience was not what you expected and ` +
+      `we will take note to improve. ` +
+      `We would like to listen to you and resolve what happened.`
+    );
+  }
+  // 3 estrellas: neutro
+  return (
+    `Thank you for your review, ${nombre}. ` +
+    `We take note of your comment to keep improving.`
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -85,4 +118,17 @@ function extraerEstrellas(prompt: string): number | null {
   const n = Number.parseInt(m[1], 10);
   if (!Number.isFinite(n) || n < 1 || n > 5) return null;
   return n;
+}
+
+/**
+ * Lee el idioma decidido por el detector (RS.7). Por defecto, español: si
+ * el prompt no incluye la línea, devolvemos "es" para mantener el
+ * comportamiento histórico del redactor.
+ */
+function extraerIdiomaDelPrompt(prompt: string): "es" | "en" {
+  const m = /Idioma de la respuesta:\s*([a-zA-Z]+)/i.exec(prompt);
+  if (m === null || m[1] === undefined) return "es";
+  const v = m[1].trim().toLowerCase();
+  if (v === "en") return "en";
+  return "es";
 }

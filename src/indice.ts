@@ -42,6 +42,11 @@ import {
   type IntentoDeInyeccion,
   type CategoriaInyeccion,
 } from "./detectarInyeccion.js";
+import {
+  detectarIdioma,
+  type Idioma,
+  type ResultadoDeteccionIdioma,
+} from "./detectorIdioma.js";
 
 export const version: string = "0.0.0";
 
@@ -54,6 +59,7 @@ export {
   revisar,
   detectarInyeccion,
   detectarGravedad,
+  detectarIdioma,
 };
 export type {
   ReseñaNegocio,
@@ -78,4 +84,6 @@ export type {
   ResultadoDeteccion,
   IntentoDeInyeccion,
   CategoriaInyeccion,
+  Idioma,
+  ResultadoDeteccionIdioma,
 };
