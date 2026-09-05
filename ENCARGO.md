@@ -180,7 +180,7 @@ minuto del dueño; una publicada de más no se recoge.
   comportamiento con el modelo falso devolviendo lo que el atacante quería —
   si el montaje no deja llegar el texto hasta el prompt, el test no vale.
 
-- ⬜ **RS.6 — Lo que hay que mirar antes de publicar.**
+- ✅ **RS.6 — Lo que hay que mirar antes de publicar.**
   Una acusación grave no se contesta sola.
   *Cierre:* (1) una reseña que alega intoxicación, cobro indebido, trato
   discriminatorio o abogados queda marcada **revisión humana**, con borrador
