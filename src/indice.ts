@@ -49,6 +49,12 @@ import {
 } from "./detectorIdioma.js";
 import { procesarLote } from "./procesarLote.js";
 import type { ResultadoProcesamientoLote } from "./procesarLote.js";
+import {
+  resumirQuejas,
+  UMBRAL_MINIMO_DEFECTO,
+  type ResumenDeQuejas,
+  type MotivoQueja,
+} from "./resumirQuejas.js";
 
 export const version: string = "0.0.0";
 
@@ -62,6 +68,8 @@ export {
   detectarInyeccion,
   detectarGravedad,
   detectarIdioma,
+  procesarLote,
+  resumirQuejas,
 };
 export type {
   ReseñaNegocio,
@@ -89,4 +97,7 @@ export type {
   Idioma,
   ResultadoDeteccionIdioma,
   ResultadoProcesamientoLote,
+  ResumenDeQuejas,
+  MotivoQueja,
 };
+export { UMBRAL_MINIMO_DEFECTO };
