@@ -225,7 +225,7 @@ minuto del dueño; una publicada de más no se recoge.
   leyendo y devuelven lo mismo que devolvían; (3) la suite entera sigue verde y
   ningún test existente se ha tocado.
 
-- ⬜ **RS.12 — El paquete, listo para entregar.**
+- ✅ **RS.12 — El paquete, listo para entregar.**
   Lo que se le manda al cliente.
   *Cierre:* (1) se exporta a Markdown y a CSV, y al releer el CSV los valores
   coinciden exactamente con los del resultado; (2) las reseñas **para revisión
