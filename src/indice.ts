@@ -13,10 +13,27 @@ import {
   type LoQueOfrece,
   type LoQueNoOfrece,
 } from "./fichaNegocio.js";
+import {
+  generarRespuesta,
+  construirPrompt,
+  type ResultadoRedaccion,
+  type RespuestaLista,
+  type RespuestaNoDisponible,
+} from "./generarRespuesta.js";
+import {
+  RedactorFalso,
+  type Redactor,
+} from "./redactor.js";
 
 export const version: string = "0.0.0";
 
-export { convertirReseñas, validarFicha };
+export {
+  convertirReseñas,
+  validarFicha,
+  generarRespuesta,
+  construirPrompt,
+  RedactorFalso,
+};
 export type {
   ReseñaNegocio,
   FichaNegocio,
@@ -27,4 +44,8 @@ export type {
   Contacto,
   LoQueOfrece,
   LoQueNoOfrece,
+  ResultadoRedaccion,
+  RespuestaLista,
+  RespuestaNoDisponible,
+  Redactor,
 };
