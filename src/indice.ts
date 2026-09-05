@@ -59,6 +59,23 @@ import {
   type MotivoQueja,
 } from "./resumirQuejas.js";
 
+// RS.12: paquete CSV + Markdown.
+import {
+  exportarCSV,
+  exportarMarkdown,
+  parsearCSV,
+  filasDelLote,
+  filasListasDelLote,
+  separarParaRevisionYFallida,
+  CABECERA_CSV,
+  SEPARADOR_CSV,
+  BOM_UTF8,
+  type FilaPaquete,
+  type EstadoEnPaquete,
+  type ResultadoLecturaCSV,
+  type PilasDelPaquete,
+} from "./empaquetar.js";
+
 import {
   claveDePrompt,
   AlmacenRespuestasEnMemoria,
@@ -81,11 +98,19 @@ export {
   detectarIdioma,
   procesarLote,
   resumirQuejas,
+  // RS.12: funciones del paquete CSV/Markdown.
+  exportarCSV,
+  exportarMarkdown,
+  parsearCSV,
+  filasDelLote,
+  filasListasDelLote,
+  separarParaRevisionYFallida,
   claveDePrompt,
   AlmacenRespuestasEnMemoria,
   AlmacenRespuestasSqlite,
   RedactorConMemoria,
 };
+export { CABECERA_CSV, SEPARADOR_CSV, BOM_UTF8 };
 export type {
   ReseñaNegocio,
   FichaNegocio,
@@ -117,5 +142,10 @@ export type {
   ResumenDeQuejas,
   MotivoQueja,
   AlmacenRespuestas,
+  // RS.12: tipos del paquete.
+  FilaPaquete,
+  EstadoEnPaquete,
+  ResultadoLecturaCSV,
+  PilasDelPaquete,
 };
 export { UMBRAL_MINIMO_DEFECTO };
