@@ -217,7 +217,7 @@ minuto del dueño; una publicada de más no se recoge.
   **sí** invalida lo guardado — el tono cambió; (3) lo guardado sobrevive a
   reiniciar el proceso.
 
-- ⬜ **RS.11 — Ahora el negocio tiene varias sucursales.**
+- ✅ **RS.11 — Ahora el negocio tiene varias sucursales.**
   Cada sucursal tiene su propia dirección, su encargado y firma sus respuestas
   distinto; y los paquetes ya generados se siguen consultando igual que antes.
   *Cierre:* (1) dos reseñas de sucursales distintas producen respuestas con la
