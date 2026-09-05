@@ -181,8 +181,25 @@ export function construirPrompt(
   const estrellasTxt = reseña.estrellas === null ? "no indicadas" : String(reseña.estrellas);
   const fechaTxt = reseña.fecha ?? "no indicada";
   const textoParaRedactor = sanearParaRedactor(reseña.texto, deteccion);
+  // RS.11 — Cuando la ficha lleva sucursal, la firma de la respuesta es
+  // `sucursal.nombre` y se añaden dirección y encargado al prompt. Cuando
+  // NO la lleva, el prompt es EXACTAMENTE el mismo de antes (punto 2 del
+  // cierre de RS.11: la caché de respuestas guardadas antes de este ítem
+  // sigue dando el mismo sha256). Por eso las líneas extra van al final y
+  // solo si la sucursal existe.
+  const firma = ficha.sucursal !== undefined ? ficha.sucursal.nombre : ficha.nombre;
+  const lineasSucursal: string[] = [];
+  if (ficha.sucursal !== undefined) {
+    const suc = ficha.sucursal;
+    if (suc.direccion !== undefined && suc.direccion.length > 0) {
+      lineasSucursal.push(`Dirección de la sucursal: ${suc.direccion}`);
+    }
+    if (suc.encargado !== undefined && suc.encargado.length > 0) {
+      lineasSucursal.push(`Encargado de la sucursal: ${suc.encargado}`);
+    }
+  }
   return [
-    `Nombre del negocio: ${ficha.nombre}`,
+    `Nombre del negocio: ${firma}`,
     `Actividad: ${ficha.actividad}`,
     `Tono: ${ficha.tono}`,
     // RS.7: el idioma en el que se debe responder, ya decidido a partir de
@@ -192,6 +209,7 @@ export function construirPrompt(
     `Estrellas: ${estrellasTxt}`,
     `Fecha: ${fechaTxt}`,
     `Reseña de ${reseña.autor || "anónimo"}: ${textoParaRedactor}`,
+    ...lineasSucursal,
   ].join("\n");
 }
 

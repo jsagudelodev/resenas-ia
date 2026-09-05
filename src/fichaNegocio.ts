@@ -33,6 +33,29 @@ export interface Contacto {
   web?: string;
 }
 
+/**
+ * RS.11 — Una sucursal del negocio, si la ficha cubre más de una.
+ *
+ * Cada sucursal firma sus respuestas con su propio `nombre`. Por eso, si la
+ * ficha lleva `sucursal`, el `nombre` general se queda como el nombre de la
+ * cadena y `sucursal.nombre` es el que aparece en el prompt del redactor
+ * (punto 1 del cierre). Si no hay sucursal, el comportamiento es el de
+ * antes: `nombre` se usa directamente (punto 2 del cierre).
+ *
+ * `direccion` y `encargado` son opcionales a propósito: una sucursal puede
+ * existir sin encargado visible o sin dirección pública. Pero el `nombre`
+ * es obligatorio cuando la sección está presente: sin él, la firma no se
+ * puede armar y se rechaza la ficha.
+ */
+export interface Sucursal {
+  /** Nombre con el que la sucursal firma sus respuestas. */
+  nombre: string;
+  /** Dirección pública de la sucursal. */
+  direccion?: string;
+  /** Persona que firma o se hace cargo de las respuestas en esa sucursal. */
+  encargado?: string;
+}
+
 export interface FichaNegocio {
   nombre: string;
   actividad: string;
@@ -40,6 +63,13 @@ export interface FichaNegocio {
   contacto: Contacto;
   ofrece: LoQueOfrece;
   noOfrece: LoQueNoOfrece;
+  /**
+   * RS.11 — Datos de la sucursal. Si están, la respuesta se firma con
+   * `sucursal.nombre` y los datos de la sucursal viajan al prompt y al
+   * revisor. Si no están, `nombre` se sigue usando como firma: las fichas
+   * sin sucursal (anteriores a RS.11) siguen funcionando idénticas.
+   */
+  sucursal?: Sucursal;
   /**
    * Idioma en el que el negocio quiere responder cuando NO se puede
    * detectar el idioma de la reseña (RS.7, punto 3). Si la ficha no lo
@@ -185,6 +215,52 @@ export function validarFicha(entrada: unknown): ResultadoValidacionFicha {
     return { ok: false, motivo: noOfrece };
   }
 
+  // RS.11 — Sucursal (opcional). Si está presente, se valida igual que el
+  // contacto: tiene que ser objeto, y los campos texto tienen que ser texto.
+  // El `nombre` de la sucursal es obligatorio cuando la sección existe: sin
+  // él no se puede firmar la respuesta y la ficha se rechaza.
+  let sucursal: Sucursal | undefined;
+  const sucursalCruda = obj["sucursal"];
+  if (sucursalCruda !== undefined) {
+    if (sucursalCruda === null || typeof sucursalCruda !== "object") {
+      return {
+        ok: false,
+        motivo: "el campo 'sucursal' debe ser un objeto.",
+      };
+    }
+    const s = sucursalCruda as Record<string, unknown>;
+    const nombreCrudo = s["nombre"];
+    if (typeof nombreCrudo !== "string" || nombreCrudo.trim().length === 0) {
+      return {
+        ok: false,
+        motivo:
+          "el campo 'sucursal.nombre' es obligatorio cuando la sección 'sucursal' está presente.",
+      };
+    }
+    const suc: Sucursal = { nombre: nombreCrudo.trim() };
+    const direccion = s["direccion"];
+    if (direccion !== undefined) {
+      if (typeof direccion !== "string") {
+        return {
+          ok: false,
+          motivo: "el campo 'sucursal.direccion' debe ser texto.",
+        };
+      }
+      suc.direccion = direccion.trim();
+    }
+    const encargado = s["encargado"];
+    if (encargado !== undefined) {
+      if (typeof encargado !== "string") {
+        return {
+          ok: false,
+          motivo: "el campo 'sucursal.encargado' debe ser texto.",
+        };
+      }
+      suc.encargado = encargado.trim();
+    }
+    sucursal = suc;
+  }
+
   // RS.7: idioma por defecto de la ficha. Si no viene, "es". Si viene pero
   // no es un idioma conocido, se rechaza la ficha (mismo criterio que el
   // tono: valor cerrado).
@@ -216,6 +292,12 @@ export function validarFicha(entrada: unknown): ResultadoValidacionFicha {
     noOfrece,
     idiomaPorDefecto,
   };
+  // RS.11: `exactOptionalPropertyTypes` no permite asignar `undefined` a un
+  // campo opcional: si la ficha no trae sucursal, la propiedad no se
+  // declara. Si la trae, se cuelga como un campo más.
+  if (sucursal !== undefined) {
+    ficha.sucursal = sucursal;
+  }
 
   return { ok: true, ficha, faltantes };
 }

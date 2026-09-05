@@ -80,6 +80,15 @@ function hechosConocidos(ficha: FichaNegocio): ReadonlySet<string> {
   if (ficha.actividad.length > 0) {
     hechos.add(ficha.actividad.toLowerCase());
   }
+  // RS.11: si la ficha lleva sucursal, su nombre y su dirección son
+  // hechos conocidos por la ficha: el redactor los puede mencionar sin
+  // que el revisor los rechace como dato inventado.
+  if (ficha.sucursal !== undefined) {
+    hechos.add(ficha.sucursal.nombre.toLowerCase());
+    if (ficha.sucursal.direccion !== undefined && ficha.sucursal.direccion.length > 0) {
+      hechos.add(ficha.sucursal.direccion.toLowerCase());
+    }
+  }
   const c = ficha.contacto;
   if (c.telefono !== undefined && c.telefono.length > 0) {
     hechos.add(c.telefono.toLowerCase());

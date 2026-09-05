@@ -12,6 +12,9 @@ import {
   type Contacto,
   type LoQueOfrece,
   type LoQueNoOfrece,
+  // RS.11: tipo de la sucursal, reexportado para que el cliente del paquete
+  // no tenga que importar del módulo interno.
+  type Sucursal,
 } from "./fichaNegocio.js";
 import {
   generarRespuesta,
@@ -93,6 +96,8 @@ export type {
   Contacto,
   LoQueOfrece,
   LoQueNoOfrece,
+  // RS.11: reexport del tipo de la sucursal.
+  Sucursal,
   ResultadoRedaccion,
   RespuestaLista,
   RespuestaNoDisponible,
