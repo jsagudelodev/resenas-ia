@@ -142,7 +142,7 @@ minuto del dueño; una publicada de más no se recoge.
   incompleta — no se descarta; (3) una entrada que no se puede interpretar
   devuelve un motivo **comprensible**, no una excepción.
 
-- ⬜ **RS.2 — La ficha del negocio.**
+- ✅ **RS.2 — La ficha del negocio.**
   Nombre, actividad, tono (cercano o formal), datos de contacto, y **lo que el
   negocio puede ofrecer y lo que no**.
   *Cierre:* (1) una ficha incompleta se acepta y dice qué le falta; (2) el tono
