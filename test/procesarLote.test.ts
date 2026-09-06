@@ -43,7 +43,7 @@ test("procesarLote: 30 reseñas devuelven 30 resultados en el mismo orden", asyn
     );
   }
   const lote = await procesarLote(reseñas, ficha, new RedactorFalso());
-  assert.equal(lote.resultados.length, 30);
+  assert.equal(lote.resultado.resultados.length, 30);
   // Cada resultado menciona el nombre del negocio (el redactor falso lo hace
   // para todas) Y el autor de la reseña correspondiente está embebido en el
   // prompt, pero aquí verificamos orden: la i-ésima reseña del input se
@@ -51,8 +51,8 @@ test("procesarLote: 30 reseñas devuelven 30 resultados en el mismo orden", asyn
   // comprobar que TODAS son respuestas listas y que la longitud cuadra — el
   // orden se comprueba en el test siguiente con un redactor que firma cada
   // entrada.
-  for (let i = 0; i < lote.resultados.length; i++) {
-    const r = lote.resultados[i];
+  for (let i = 0; i < lote.resultado.resultados.length; i++) {
+    const r = lote.resultado.resultados[i];
     assert.ok(r !== undefined, `resultado ${i} no debe ser undefined`);
     assert.equal("texto" in r, true, `resultado ${i} debe ser lista`);
   }
@@ -75,7 +75,7 @@ test("procesarLote: el orden de los resultados coincide con el de las reseñas",
   }
   const lote = await procesarLote(reseñas, ficha, redactor);
   for (let i = 0; i < 30; i++) {
-    const r = lote.resultados[i];
+    const r = lote.resultado.resultados[i];
     assert.ok(r !== undefined);
     assert.equal("texto" in r, true);
     if (!("texto" in r)) continue;
@@ -108,11 +108,11 @@ test("procesarLote: un redactor que lanza para una reseña no tumba el lote", as
   const lote = await procesarLote(reseñas, ficha, redactorExplosivo);
   // Las 10 reseñas se procesaron: la 7 cae, las otras 9 llegan a `texto`.
   assert.equal(llamadas, 10);
-  assert.equal(lote.resultados.length, 10);
+  assert.equal(lote.resultado.resultados.length, 10);
 
   // La reseña 7 quedó como `noDisponible` con motivo que menciona el error
   // del redactor.
-  const r7 = lote.resultados[7];
+  const r7 = lote.resultado.resultados[7];
   assert.ok(r7 !== undefined);
   assert.equal("noDisponible" in r7, true, "la reseña 7 debe caer como noDisponible");
   if (!("noDisponible" in r7)) return;
@@ -121,7 +121,7 @@ test("procesarLote: un redactor que lanza para una reseña no tumba el lote", as
   // Las demás son respuestas listas con su firma esperada.
   for (let i = 0; i < 10; i++) {
     if (i === 7) continue;
-    const r = lote.resultados[i];
+    const r = lote.resultado.resultados[i];
     assert.ok(r !== undefined);
     assert.equal("texto" in r, true, `reseña ${i} debe ser lista`);
     if (!("texto" in r)) continue;
@@ -153,9 +153,9 @@ test("procesarLote: las excepciones externas también se contienen (no tumban el
   ];
   const lote = await procesarLote(reseñas, ficha, redactorFalloDeRevision);
   // Ninguna excepción se propagó fuera de procesarLote.
-  assert.equal(lote.resultados.length, 5);
+  assert.equal(lote.resultado.resultados.length, 5);
   // La reseña 3 cayó por la revisión de RS.4.
-  const r3 = lote.resultados[3];
+  const r3 = lote.resultado.resultados[3];
   assert.ok(r3 !== undefined);
   assert.equal("noDisponible" in r3, true);
   if ("noDisponible" in r3) {
@@ -190,18 +190,18 @@ test("procesarLote: los conteos cuadran con la clasificación de cada resultado"
     reseña("Bien3", "Volveré pronto", 4),      // lista
   ];
   const lote = await procesarLote(reseñas, ficha, redactor);
-  assert.equal(lote.resultados.length, 5);
-  assert.equal(lote.listas, 3, "deben contar 3 listas");
-  assert.equal(lote.paraRevision, 1, "debe contar 1 para revisión");
-  assert.equal(lote.fallaron, 1, "debe contar 1 fallida");
+  assert.equal(lote.resultado.resultados.length, 5);
+  assert.equal(lote.resultado.listas, 3, "deben contar 3 listas");
+  assert.equal(lote.resultado.paraRevision, 1, "debe contar 1 para revisión");
+  assert.equal(lote.resultado.fallaron, 1, "debe contar 1 fallida");
   // Suma = total.
-  assert.equal(lote.listas + lote.paraRevision + lote.fallaron, 5);
+  assert.equal(lote.resultado.listas + lote.resultado.paraRevision + lote.resultado.fallaron, 5);
 });
 
 test("procesarLote: lote vacío produce conteos en cero y resultados vacío", async () => {
   const lote = await procesarLote([], ficha, new RedactorFalso());
-  assert.deepEqual(lote.resultados, []);
-  assert.equal(lote.listas, 0);
-  assert.equal(lote.paraRevision, 0);
-  assert.equal(lote.fallaron, 0);
+  assert.deepEqual(lote.resultado.resultados, []);
+  assert.equal(lote.resultado.listas, 0);
+  assert.equal(lote.resultado.paraRevision, 0);
+  assert.equal(lote.resultado.fallaron, 0);
 });

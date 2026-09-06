@@ -83,7 +83,7 @@ function loteDePrueba(cantidad: number): ReseñaNegocio[] {
 /** Textos de las respuestas listas, en orden, para comparar pasadas. */
 function textosListos(lote: Awaited<ReturnType<typeof procesarLote>>): string[] {
   const textos: string[] = [];
-  for (const resultado of lote.resultados) {
+  for (const resultado of lote.resultado.resultados) {
     if ("texto" in resultado) {
       textos.push(resultado.texto);
     }
@@ -114,8 +114,8 @@ test("RS.10 punto 1: el mismo lote procesado dos veces llama al LLM cero veces l
     llamadasTrasPrimera,
     "la segunda pasada no debe haber llamado al modelo ni una vez",
   );
-  assert.equal(primera.listas, 30);
-  assert.equal(segunda.listas, 30);
+  assert.equal(primera.resultado.listas, 30);
+  assert.equal(segunda.resultado.listas, 30);
   assert.deepEqual(textosListos(segunda), textosListos(primera));
 });
 
@@ -141,7 +141,7 @@ test("RS.10 punto 1: reenviar el lote con dos reseñas nuevas solo paga esas dos
     30,
     "solo las dos reseñas nuevas se redactan; las 28 de antes no se vuelven a pagar",
   );
-  assert.equal(segunda.resultados.length, 30);
+  assert.equal(segunda.resultado.resultados.length, 30);
   assert.equal(almacen.tamano, 30);
 });
 
@@ -153,7 +153,7 @@ test("RS.10 punto 1: una reseña repetida dentro del mismo lote se redacta una s
   const lote = await procesarLote([duplicada, duplicada], fichaCercana, conMemoria);
 
   assert.equal(redactor.llamadas, 1, "la segunda copia sale del almacén");
-  assert.equal(lote.listas, 2, "las dos entradas devuelven respuesta");
+  assert.equal(lote.resultado.listas, 2, "las dos entradas devuelven respuesta");
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -278,12 +278,12 @@ test("RS.10: un fallo del redactor no se guarda; la siguiente pasada reintenta",
   const reseñas = [reseña("Cliente 1", "Regular", 2)];
 
   const primera = await procesarLote(reseñas, fichaCercana, conMemoria);
-  assert.equal(primera.fallaron, 1);
+  assert.equal(primera.resultado.fallaron, 1);
   assert.equal(almacen.tamano, 0, "el fallo no ocupa un hueco en la caché");
 
   const segunda = await procesarLote(reseñas, fichaCercana, conMemoria);
   assert.equal(veces, 2, "la reseña vuelve a pasar por el modelo");
-  assert.equal(segunda.listas, 1);
+  assert.equal(segunda.resultado.listas, 1);
   assert.equal(almacen.tamano, 1);
 });
 

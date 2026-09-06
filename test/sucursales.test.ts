@@ -83,11 +83,11 @@ test("RS.11 punto 1: dos sucursales distintas producen respuestas con la firma d
 
   // Cada lote tiene UNA respuesta y cada respuesta menciona el nombre de
   // SU sucursal — no el de la otra, ni el genérico.
-  assert.equal(loteCentroRes.resultados.length, 1);
-  assert.equal(loteNorteRes.resultados.length, 1);
+  assert.equal(loteCentroRes.resultado.resultados.length, 1);
+  assert.equal(loteNorteRes.resultado.resultados.length, 1);
 
-  const resCentro = loteCentroRes.resultados[0];
-  const resNorte = loteNorteRes.resultados[0];
+  const resCentro = loteCentroRes.resultado.resultados[0];
+  const resNorte = loteNorteRes.resultado.resultados[0];
   assert.ok(resCentro !== undefined);
   assert.ok(resNorte !== undefined);
   assert.equal("texto" in resCentro, true, "Centro esperaba respuesta lista");

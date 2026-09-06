@@ -405,11 +405,12 @@ async function manejarPOSTLotes(
 
   // Aviso al operador: las filas que no se pudieron parsear se devuelven en el
   // log del lote y NO cuentan para el tamaño, pero el lote sigue.
-  const lote: ResultadoProcesamientoLote = await procesarLote(
+  const loteProcesado = await procesarLote(
     conversion.reseñas,
     validacion.ficha,
     ctx.redactor,
   );
+  const lote = loteProcesado.resultado;
 
   const resumen = resumirQuejas(lote);
   const filas = filasDelLote(lote, conversion.reseñas);
