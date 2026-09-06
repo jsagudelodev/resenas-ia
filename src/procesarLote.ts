@@ -14,6 +14,7 @@ import {
   generarRespuesta,
   type ResultadoRedaccion,
 } from "./generarRespuesta.js";
+import type { RegistradorSeguro } from "./registro.js";
 
 export interface ResultadoProcesamientoLote {
   /**
@@ -45,6 +46,7 @@ export async function procesarLote(
   reseñas: ReadonlyArray<ReseñaNegocio>,
   ficha: FichaNegocio,
   redactor: Redactor,
+  regs: RegistradorSeguro | null = null,
 ): Promise<ResultadoProcesamientoLote> {
   const resultados: ResultadoRedaccion[] = [];
 
@@ -55,13 +57,27 @@ export async function procesarLote(
       // descarta), pero la guarda deja claro que el índice es válido.
       continue;
     }
+    if (regs !== null) {
+      regs.registrar({
+        nivel: "info",
+        mensaje: `procesando reseña ${i} del lote.`,
+        contexto: { indice: i, estrellas: reseña.estrellas, fecha: reseña.fecha },
+      });
+    }
     let resultado: ResultadoRedaccion;
     try {
-      resultado = await generarRespuesta(reseña, ficha, redactor);
+      resultado = await generarRespuesta(reseña, ficha, redactor, regs);
     } catch (error: unknown) {
       const motivo = error instanceof Error
         ? `el lote no pudo procesar la reseña ${i}: ${error.message}`
         : `el lote no pudo procesar la reseña ${i}: error desconocido.`;
+      if (regs !== null) {
+        regs.registrar({
+          nivel: "error",
+          mensaje: motivo,
+          contexto: { indice: i },
+        });
+      }
       resultado = {
         noDisponible: true,
         motivo,

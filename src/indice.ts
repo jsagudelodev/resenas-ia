@@ -84,6 +84,21 @@ import {
   type AlmacenRespuestas,
 } from "./almacenRespuestas.js";
 
+// RS.13: módulo de log con saneamiento de credenciales y nombres de
+// reseñadores (regla 10).
+import {
+  listaDeSaneamientoDeLote,
+  ocultarCadenas,
+  RegistradorEstandar,
+  RegistradorSeguro,
+  RegistradorDePrueba,
+  type Contexto,
+  type Evento,
+  type Nivel,
+  type Registrador,
+  type ListaDeSaneamiento,
+} from "./registro.js";
+
 export const version: string = "0.0.0";
 
 export {
@@ -109,6 +124,12 @@ export {
   AlmacenRespuestasEnMemoria,
   AlmacenRespuestasSqlite,
   RedactorConMemoria,
+  // RS.13: registro sanitizado.
+  listaDeSaneamientoDeLote,
+  ocultarCadenas,
+  RegistradorEstandar,
+  RegistradorSeguro,
+  RegistradorDePrueba,
 };
 export { CABECERA_CSV, SEPARADOR_CSV, BOM_UTF8 };
 export type {
@@ -147,5 +168,11 @@ export type {
   EstadoEnPaquete,
   ResultadoLecturaCSV,
   PilasDelPaquete,
+  // RS.13: tipos del registro.
+  Contexto,
+  Evento,
+  Nivel,
+  Registrador,
+  ListaDeSaneamiento,
 };
 export { UMBRAL_MINIMO_DEFECTO };

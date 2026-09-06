@@ -12,6 +12,7 @@ import { revisar } from "./revisarRespuesta.js";
 import { detectarInyeccion, type IntentoDeInyeccion, type ResultadoDeteccion } from "./detectarInyeccion.js";
 import { detectarGravedad, type ResultadoGravedad } from "./detectorGravedad.js";
 import { detectarIdioma, type Idioma } from "./detectorIdioma.js";
+import type { RegistradorSeguro } from "./registro.js";
 
 export interface RespuestaLista {
   /** Texto listo para pegar. */
@@ -95,7 +96,15 @@ export async function generarRespuesta(
   reseña: ReseñaNegocio,
   ficha: FichaNegocio,
   redactor: Redactor,
+  regs: RegistradorSeguro | null = null,
 ): Promise<ResultadoRedaccion> {
+  if (regs !== null) {
+    regs.registrar({
+      nivel: "info",
+      mensaje: `redactando respuesta para reseña del autor.`,
+      contexto: { estrellas: reseña.estrellas, idioma: ficha.idiomaPorDefecto },
+    });
+  }
   // RS.5: el texto de la reseña es entrada de un desconocido. Antes de
   // gastar al redactor, miramos si la reseña trae instrucciones disfrazadas.
   // El prompt que ve el redactor lleva la reseña SANEADA (los fragmentos
