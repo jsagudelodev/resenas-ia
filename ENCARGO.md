@@ -298,7 +298,7 @@ minuto del dueño; una publicada de más no se recoge.
   de la primera; (3) lo marcado **sobrevive a reiniciar el proceso**, y los
   paquetes guardados antes de este ítem se siguen leyendo igual que antes.
 
-- ⬜ **RS.16 — Cuántas respuestas ha pagado.**
+- ✅ **RS.16 — Cuántas respuestas ha pagado.**
   Para cobrar hace falta saber qué consumió cada cliente, y el dueño tiene que
   poder verlo sin discutir. Un cliente compra un paquete de respuestas y el
   servicio lleva la cuenta.
