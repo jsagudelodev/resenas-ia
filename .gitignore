@@ -5,4 +5,6 @@ dist/
 logs/
 memoria.db
 memoria.db-*
-.argos/
+.argos/*
+# …salvo las reglas del proyecto, que SÍ son del repo (regla 8, gate de cierre).
+!.argos/prohibiciones.json

@@ -84,9 +84,31 @@ minuto del dueño; una publicada de más no se recoge.
 7. **La suite completa corre sin red y sin credenciales.** Ni un solo test puede
    necesitar internet, una clave de API ni un servicio externo. **No es
    negociable** y aplica desde el primer ítem hasta el último.
-8. **Prohibido `any`, `as` y `@ts-ignore` para callar al compilador.** El
-   compilador es el gate de este proyecto (§7): silenciarlo es desactivar la
-   medición. Si un tipo no encaja, el diseño está mal; arréglalo o repórtalo.
+8. **No calles al compilador.** Es el gate de este proyecto (§7): silenciarlo es
+   desactivar la medición. Si un tipo no encaja, el diseño está mal.
+   - **`any` y `@ts-ignore`: prohibidos, sin excepción.**
+   - **`as`: solo para cruzar la frontera de un `unknown` que viene de fuera**
+     (un `JSON.parse`, una entrada sin validar) y **siempre dicho en tu fila de
+     la bitácora**, con el motivo. Un `as` para que un tipo propio encaje con
+     otro tipo propio no es una frontera: es el diseño pidiendo un arreglo.
+   - **Lo que no vale es el silencio.** Un `as` declarado y justificado es
+     información; uno usado mientras la fila afirma «sin `as`» es una
+     afirmación falsa en el registro de auditoría, y eso pesa más que el cast.
+
+   > **Enmienda del 2026-09-05, con su historia porque es la que explica la
+   > regla.** La versión original prohibía los tres en seco. RS.2 usó cuatro
+   > `as` y **no lo dijo**; RS.13 usó tres mientras su fila afirmaba «sin
+   > `any`, `as` ni `@ts-ignore`»; RS.14 usó uno **y lo declaró con su razón**
+   > —«un `as unknown as` para el `JSON.parse` de entrada, que es la forma
+   > segura de cruzar la frontera de un `unknown`»—, que es la conducta que se
+   > quería. La regla se matiza a lo que RS.14 hizo bien. **No se reabren los
+   > ítems cerrados** (regla 13): lo de RS.2 y RS.13 queda como hallazgo
+   > registrado, no como trabajo pendiente.
+   >
+   > A partir de esta enmienda la regla **se comprueba sola**: las prohibiciones
+   > están en `.argos/prohibiciones.json` y el gate de cierre de Argos las busca
+   > en lo que cada tanda edita. Bloquea una vez con archivo y línea; si insistes
+   > te cree, pero entonces el uso queda dicho.
 9. **Errores:** nunca se le muestra al usuario un rastro de excepción ni un
    mensaje técnico. Una reseña que no se puede procesar **no puede tumbar el
    servicio** ni arruinar el lote: se registra, se marca esa reseña y las demás
