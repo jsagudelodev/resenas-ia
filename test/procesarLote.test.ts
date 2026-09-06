@@ -4,6 +4,7 @@ import { procesarLote } from "../src/procesarLote.js";
 import { RedactorFalso, type Redactor } from "../src/redactor.js";
 import type { ReseñaNegocio } from "../src/convertirReseñas.js";
 import type { FichaNegocio } from "../src/fichaNegocio.js";
+import { ServicioSaldoCliente } from "../src/saldoCliente.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Datos comunes
@@ -80,6 +81,67 @@ test("procesarLote: el orden de los resultados coincide con el de las reseñas",
     assert.equal("texto" in r, true);
     if (!("texto" in r)) continue;
     assert.match(r.texto, new RegExp(`Cliente ${i}`));
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cierre de RS.23 — punto 2: la suma de cobradas cuadra con lo descontado.
+// Un lote con listas, paraRevision y fallidas; la suma de cobradas(true) es
+// exactamente listas, y eso cuadra con lo que descontó el saldo.
+// ─────────────────────────────────────────────────────────────────────────────
+
+test("procesarLote con saldo: cobradas(true) por reseña suma exactamente listas (RS.23 punto 2)", async () => {
+  // 3 listas, 2 para revision, 1 fallida = 6 reseñas.
+  // El saldo descuenta 3 (las listas), no 6.
+  const reseñas: ReseñaNegocio[] = [
+    // Lista
+    { autor: "a", texto: "Bien", estrellas: 5, fecha: "2024-03-01", incompleta: false, motivo: null },
+    { autor: "b", texto: "Regular", estrellas: 3, fecha: "2024-03-02", incompleta: false, motivo: null },
+    { autor: "c", texto: "Mal", estrellas: 1, fecha: "2024-03-03", incompleta: false, motivo: null },
+    // Para revisión: textos que el detector de gravedad sí reconoce como
+    // acusación grave (cobro indebido, intoxicación).
+    { autor: "d", texto: "Me cobraron de más sin motivo.", estrellas: 1, fecha: "2024-03-04", incompleta: false, motivo: null },
+    { autor: "e", texto: "Me cobraron dos veces y no quiere devolver.", estrellas: 1, fecha: "2024-03-05", incompleta: false, motivo: null },
+    // Fallida: el redactor explota.
+    { autor: "f", texto: "explota", estrellas: 1, fecha: "2024-03-06", incompleta: false, motivo: null },
+  ];
+
+  let llamada = 0;
+  const redactor: Redactor = {
+    async redactar(prompt: string): Promise<string> {
+      llamada++;
+      if (prompt.includes("explota")) throw new Error("redactor caído");
+      // Las tres primeras son listas; d y e devuelven texto que la revisión
+      // de RS.4 acepta, pero el detector de gravedad las marca para revisión.
+      if (llamada <= 3) return `respuesta para ${llamada}`;
+      return `respuesta que se entrega como borrador.`;
+    },
+  };
+
+  // Reescribimos la respuesta de d y e a revisionHumana tras generarRespuesta.
+  // El test demuestra la COBRADA del resultado, no la lógica de revisionHumana
+  // de RS.6 (que vive en generarRespuesta.ts). Aquí comprobamos que la suma de
+  // cobradas(true) en resultados cuadra con el conteo de listas.
+  const svc = new ServicioSaldoCliente(":memory:");
+  try {
+    svc.agregar("cliente-23", 10);
+
+    const lote = await procesarLote(reseñas, ficha, redactor, null, {
+      servicio: svc,
+      idCliente: "cliente-23",
+    });
+
+    const cobradas = lote.resultado.resultados.filter((r) => r.cobrada).length;
+    const listas = lote.resultado.listas;
+
+    assert.equal(cobradas, listas, "las cobradas(true) deben ser exactamente listas");
+    assert.equal(cobradas, 3, "3 respuestas cobradas");
+    assert.equal(lote.resultado.listas, 3);
+    assert.equal(lote.resultado.paraRevision, 2);
+    assert.equal(lote.resultado.fallaron, 1);
+    assert.equal(svc.consultar("cliente-23").respuestas, 7, "descontó 3 de 10");
+  } finally {
+    svc.cerrar();
   }
 });
 
