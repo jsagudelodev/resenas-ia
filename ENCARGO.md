@@ -318,7 +318,7 @@ minuto del dueño; una publicada de más no se recoge.
   las dos llegan a la vez; (3) un código inexistente, ya usado o mal escrito
   devuelve un motivo comprensible **sin revelar** si existía ni cuántos hay.
 
-- ⬜ **RS.18 — El enlace que se manda por WhatsApp.**
+- ✅ **RS.18 — El enlace que se manda por WhatsApp.** (commits `82128a7`)
   El cliente paga, y hay que entregarle el paquete. Va a llegarle por WhatsApp,
   así que el enlace tiene que ser corto y de un solo uso previsible: lo abre en
   el móvil, se descarga y se acaba. Un enlace eterno pegado en un chat es el
