@@ -114,6 +114,12 @@ import {
   type Registrador,
   type ListaDeSaneamiento,
 } from "./registro.js";
+// RS.16: saldo de cliente con persistencia SQLite.
+import {
+  ServicioSaldoCliente,
+  type SaldoCliente,
+  type DescontarRespuestas,
+} from "./saldoCliente.js";
 
 export const version: string = "0.0.0";
 
@@ -151,6 +157,8 @@ export {
   RegistradorEstandar,
   RegistradorSeguro,
   RegistradorDePrueba,
+  // RS.16: saldo de cliente.
+  ServicioSaldoCliente,
 };
 export { CABECERA_CSV, SEPARADOR_CSV, BOM_UTF8 };
 export type {
@@ -163,6 +171,8 @@ export type {
   Contacto,
   LoQueOfrece,
   LoQueNoOfrece,
+  SaldoCliente,
+  DescontarRespuestas,
   // RS.11: reexport del tipo de la sucursal.
   Sucursal,
   ResultadoRedaccion,

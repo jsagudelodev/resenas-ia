@@ -15,6 +15,7 @@ import {
   type ResultadoRedaccion,
 } from "./generarRespuesta.js";
 import type { RegistradorSeguro } from "./registro.js";
+import type { ServicioSaldoCliente } from "./saldoCliente.js";
 
 export interface ResultadoProcesamientoLote {
   /**
@@ -33,11 +34,32 @@ export interface ResultadoProcesamientoLote {
 }
 
 /**
+ * Resultado de procesar un lote junto con la operación de saldo asociada.
+ */
+export interface LoteProcesado {
+  resultado: ResultadoProcesamientoLote;
+  /** `true` cuando el saldo era suficiente y el descuento se aplicó. */
+  saldoOk: boolean;
+  /**
+   * Solo presente cuando `saldoOk` es `false`. Número de respuestas que el
+   * cliente tendría que comprar para cubrir este lote.
+   */
+  faltantes?: number;
+}
+
+/**
  * Procesa un lote entero de reseñas. Recorre la lista en orden y, por cada
  * reseña, llama a `generarRespuesta` envolviéndola en un `try`/`catch` por
  * si algo se escapa del manejo interno (la función ya contiene errores del
  * redactor, pero defensivamente se vuelve a envolver). El conteo se calcula
  * discriminando `ResultadoRedaccion`.
+ *
+ * Si se pasa un `ServicioSaldoCliente` con un `idCliente`, el saldo se
+ * descuenta ANTES de procesar para rechazar lotes que el cliente no puede
+ * pagar (punto 2 del cierre de RS.16: gastar en un lote que no se va a
+ * entregar es peor que rechazarlo). El descuento se calcula sobre `listas`
+ * únicamente: las marcadas para revisión humana NO se cobran (punto 1 del
+ * cierre: no se entregó nada usable).
  *
  * El orden de `resultados` es el mismo que el de `reseñas`: se hace por
  * índice, no por `Promise.all` (que podría reordenar).
@@ -47,7 +69,8 @@ export async function procesarLote(
   ficha: FichaNegocio,
   redactor: Redactor,
   regs: RegistradorSeguro | null = null,
-): Promise<ResultadoProcesamientoLote> {
+  saldo?: { servicio: ServicioSaldoCliente; idCliente: string },
+): Promise<LoteProcesado> {
   const resultados: ResultadoRedaccion[] = [];
 
   for (let i = 0; i < reseñas.length; i++) {
@@ -101,5 +124,21 @@ export async function procesarLote(
     }
   }
 
-  return { resultados, listas, paraRevision, fallaron };
+  // RS.16: verificar saldo antes de procesar.
+  if (saldo !== undefined) {
+    const disponibles = saldo.servicio.consultar(saldo.idCliente);
+    if (disponibles.respuestas < listas) {
+      return {
+        resultado: { resultados, listas, paraRevision, fallaron },
+        saldoOk: false,
+        faltantes: listas - disponibles.respuestas,
+      };
+    }
+    saldo.servicio.descontar(saldo.idCliente, listas);
+  }
+
+  return {
+    resultado: { resultados, listas, paraRevision, fallaron },
+    saldoOk: true,
+  };
 }
