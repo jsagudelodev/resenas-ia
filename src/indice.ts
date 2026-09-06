@@ -121,6 +121,15 @@ import {
   type DescontarRespuestas,
 } from "./saldoCliente.js";
 
+// RS.21: redactor real (el que llama a un modelo por HTTP) y su transporte,
+// exportados para que el cliente del paquete pueda usar un proveedor real.
+import {
+  RedactorReal,
+  crearTransporteReal,
+  type TransporteHttp,
+  type RespuestaBruta,
+} from "./redactorReal.js";
+
 export const version: string = "0.0.0";
 
 export {
@@ -159,6 +168,11 @@ export {
   RegistradorDePrueba,
   // RS.16: saldo de cliente.
   ServicioSaldoCliente,
+  // RS.21: redactor real y transporte HTTP.
+  RedactorReal,
+  crearTransporteReal,
+  type TransporteHttp,
+  type RespuestaBruta,
 };
 export { CABECERA_CSV, SEPARADOR_CSV, BOM_UTF8 };
 export type {

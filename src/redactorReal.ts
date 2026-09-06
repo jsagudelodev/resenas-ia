@@ -244,7 +244,7 @@ export class TransporteHttpReal implements TransporteHttp {
         Authorization: `Bearer ${this.clave}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: process.env["LLM_MODEL"] ?? "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
       }),
