@@ -84,6 +84,19 @@ import {
   type AlmacenRespuestas,
 } from "./almacenRespuestas.js";
 
+// RS.14: servicio HTTP que recibe el lote y devuelve el paquete.
+import {
+  crearServidor,
+  MAX_RESEÑAS_POR_LOTE_DEFECTO,
+  AlmacenDeLotesEnMemoria,
+  type OpcionesServidor,
+  type AlmacenDeLotes,
+  type PaqueteAlmacenado,
+  type EntradaProcesarLote,
+  type SalidaProcesarLote,
+  type ServidorLevantado,
+} from "./servicio.js";
+
 // RS.13: módulo de log con saneamiento de credenciales y nombres de
 // reseñadores (regla 10).
 import {
@@ -124,6 +137,10 @@ export {
   AlmacenRespuestasEnMemoria,
   AlmacenRespuestasSqlite,
   RedactorConMemoria,
+  // RS.14: servicio HTTP.
+  crearServidor,
+  MAX_RESEÑAS_POR_LOTE_DEFECTO,
+  AlmacenDeLotesEnMemoria,
   // RS.13: registro sanitizado.
   listaDeSaneamientoDeLote,
   ocultarCadenas,
@@ -174,5 +191,12 @@ export type {
   Nivel,
   Registrador,
   ListaDeSaneamiento,
+  // RS.14: tipos del servicio.
+  OpcionesServidor,
+  AlmacenDeLotes,
+  PaqueteAlmacenado,
+  EntradaProcesarLote,
+  SalidaProcesarLote,
+  ServidorLevantado,
 };
 export { UMBRAL_MINIMO_DEFECTO };
