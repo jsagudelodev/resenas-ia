@@ -4,17 +4,31 @@
     {
       "patron": ":\\s*any\\b|<any>|\\bas\\s+any\\b",
       "motivo": "regla 8: `any` está prohibido sin excepción — apaga el compilador, que es el gate de este proyecto",
-      "rutas": [".ts"]
+      "rutas": [
+        ".ts"
+      ]
     },
     {
       "patron": "@ts-(ignore|expect-error)",
       "motivo": "regla 8: silenciar un error del compilador está prohibido sin excepción — si el tipo no encaja, el diseño está mal",
-      "rutas": [".ts"]
+      "rutas": [
+        ".ts"
+      ]
     },
     {
       "patron": "(?<!\\*\\s)\\bas\\s+(?:unknown|[A-Z][A-Za-z0-9_]*|string|number|boolean|Record)\\b",
       "motivo": "regla 8: `as` solo vale para cruzar la frontera de un `unknown` externo (un JSON.parse, una entrada sin validar) Y dicho en tu fila de la bitácora con el motivo. Si es eso, dilo y sigue; si es para que dos tipos propios encajen, arregla el diseño",
-      "rutas": [".ts"]
+      "rutas": [
+        ".ts"
+      ]
+    },
+    {
+      "patron": "[Ѐ-ӿͰ-Ͽ一-鿿぀-ヿ֐-׿؀-ۿ]",
+      "motivo": "regla 3: todo en espanol. Hay un caracter de otro alfabeto (cirilico, griego, CJK, hebreo o arabe) en esta linea. Los modelos gratuitos los dejan caer DENTRO de palabras espanolas y no se ven: `espanolas偶尔`, `red费ine`, «no puede продаваться». Borra el caracter y escribe la palabra entera",
+      "rutas": [
+        ".ts"
+      ],
+      "comentarios": true
     }
   ]
 }
