@@ -309,7 +309,7 @@ minuto del dueño; una publicada de más no se recoge.
   a entregar es peor que rechazarlo; (3) el saldo **sobrevive a reiniciar el
   proceso** y dos descuentos simultáneos del mismo saldo no lo dejan en negativo.
 
-- ⬜ **RS.17 — El código de compra que recarga el saldo.**
+- ✅ **RS.17 — El código de compra que recarga el saldo.** *(Cierre: (1) un código válido recarga el saldo una vez y queda consumido; (2) canjear el mismo código dos veces no recarga dos veces — tampoco si las dos llegan a la vez; (3) un código inexistente, ya usado o mal escrito devuelve un motivo comprensible sin revelar si existía ni cuántos hay.)*
   Así se cobra sin pasarela: se vende un paquete por Nequi o transferencia, se
   entrega un código, y el cliente lo canjea. Sin esto, cada cobro es una entrada
   a mano en la base de datos.
