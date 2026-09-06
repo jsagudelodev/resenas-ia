@@ -112,6 +112,11 @@ export class AlmacenRespuestasSqlite implements AlmacenRespuestas {
   private base: DatabaseSync;
   private readonly sentenciaBuscar: StatementSync;
   private readonly sentenciaGuardar: StatementSync;
+  /** Forma de la fila que devuelve SQLite para la tabla respuestas_publicadas. */
+  readonly #filaPublicada = (row: unknown) => {
+    const r = row as { clave: string; publicado_en: string };
+    return { clave: r.clave, publicadoEn: r.publicado_en } satisfies RespuestaPublicada;
+  };
 
   constructor(ruta: string) {
     this.ruta = ruta;
@@ -168,8 +173,8 @@ export class AlmacenRespuestasSqlite implements AlmacenRespuestas {
   consultarPublicadas(): RespuestaPublicada[] {
     const filas = this.base
       .prepare("SELECT clave, publicado_en FROM respuestas_publicadas")
-      .all() as Array<{ clave: string; publicado_en: string }>;
-    return filas.map((f) => ({ clave: f.clave, publicadoEn: f.publicado_en }));
+      .all();
+    return (filas as unknown[]).map(this.#filaPublicada);
   }
 
   cerrar(): void {
