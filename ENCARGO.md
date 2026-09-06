@@ -330,7 +330,7 @@ minuto del dueño; una publicada de más no se recoge.
   que exista y que no exista tienen que ser indistinguibles desde fuera;
   (3) los enlaces emitidos **sobreviven a reiniciar el proceso**.
 
-- ⬜ **RS.19 — El redactor de verdad.**
+- ✅ **RS.19 — El redactor de verdad.**
   Todo lo construido hasta aquí rodea al LLM y ninguna pieza lo llama: `src/`
   solo tiene `RedactorFalso`. El producto **no ha escrito una sola respuesta**,
   así que el criterio de vendible de la §4 no se ha comprobado en ningún punto.
