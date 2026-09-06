@@ -298,6 +298,17 @@ minuto del dueño; una publicada de más no se recoge.
   de la primera; (3) lo marcado **sobrevive a reiniciar el proceso**, y los
   paquetes guardados antes de este ítem se siguen leyendo igual que antes.
 
+- ⬜ **RS.16 — Cuántas respuestas ha pagado.**
+  Para cobrar hace falta saber qué consumió cada cliente, y el dueño tiene que
+  poder verlo sin discutir. Un cliente compra un paquete de respuestas y el
+  servicio lleva la cuenta.
+  *Cierre:* (1) un lote descuenta **una por respuesta entregada como lista**, y
+  las que salen marcadas para **revisión humana no se cobran** — no se entregó
+  nada usable; (2) si el saldo no llega para el lote entero, se **rechaza antes
+  de llamar al modelo** y se dice cuántas faltan: gastar en un lote que no se va
+  a entregar es peor que rechazarlo; (3) el saldo **sobrevive a reiniciar el
+  proceso** y dos descuentos simultáneos del mismo saldo no lo dejan en negativo.
+
 ---
 
 ## 7. Cómo se mide esta tanda (para el evaluador, no para el agente)
