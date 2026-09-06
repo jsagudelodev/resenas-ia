@@ -232,7 +232,7 @@ minuto del dueño; una publicada de más no se recoge.
   humana** salen separadas de las listas, no mezcladas; (3) el CSV se abre bien
   en un Excel en español (separador y codificación correctos).
 
-- ⬜ **RS.13 — Ni un nombre de reseñador en el log.**
+- ✅ **RS.13 — Ni un nombre de reseñador en el log.**
   *Cierre:* (1) test que procesa un lote con una credencial configurada y
   comprueba que **ni la credencial ni el nombre de ningún reseñador** aparecen en
   ninguna línea del log; (2) para que el test pruebe algo, el dato tiene que
