@@ -318,6 +318,18 @@ minuto del dueño; una publicada de más no se recoge.
   las dos llegan a la vez; (3) un código inexistente, ya usado o mal escrito
   devuelve un motivo comprensible **sin revelar** si existía ni cuántos hay.
 
+- ⬜ **RS.18 — El enlace que se manda por WhatsApp.**
+  El cliente paga, y hay que entregarle el paquete. Va a llegarle por WhatsApp,
+  así que el enlace tiene que ser corto y de un solo uso previsible: lo abre en
+  el móvil, se descarga y se acaba. Un enlace eterno pegado en un chat es el
+  paquete de un cliente circulando para siempre.
+  *Cierre:* (1) el enlace lleva a **su** paquete y **caduca** —pasado el plazo
+  devuelve un motivo comprensible, no el archivo—, y el plazo se configura;
+  (2) **no se puede adivinar ni recorrer**: probar con el identificador de otro,
+  o con uno inventado, no entrega nada y responde **igual** en los dos casos —
+  que exista y que no exista tienen que ser indistinguibles desde fuera;
+  (3) los enlaces emitidos **sobreviven a reiniciar el proceso**.
+
 ---
 
 ## 7. Cómo se mide esta tanda (para el evaluador, no para el agente)
