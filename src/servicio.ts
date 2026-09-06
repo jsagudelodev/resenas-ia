@@ -46,7 +46,7 @@ import http, {
   type ServerResponse,
   type Server,
 } from "node:http";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 
 import { convertirReseñas, type ReseñaNegocio } from "./convertirReseñas.js";
 import { validarFicha, type FichaNegocio } from "./fichaNegocio.js";
@@ -67,6 +67,9 @@ import {
 /** Máximo de reseñas por lote cuando nadie dice otra cosa. */
 export const MAX_RESEÑAS_POR_LOTE_DEFECTO = 100;
 
+/** Plazo de caducidad de los enlaces cuando nadie dice otra cosa: 7 días. */
+export const PLAZO_CADUCIDAD_DEFECTO_MS = 7 * 24 * 60 * 60 * 1000;
+
 export interface OpcionesServidor {
   /** Tope de reseñas por lote. Default: `MAX_RESEÑAS_POR_LOTE_DEFECTO`. */
   maxReseñasPorLote?: number;
@@ -82,6 +85,11 @@ export interface OpcionesServidor {
    * Puerto del listener. `0` deja al sistema asignar uno libre. Default: `0`.
    */
   puerto?: number;
+  /**
+   * Plazo de caducidad de los enlaces en milisegundos. Default: `604800000`
+   * (7 días). Si es `0` o negativo, los enlaces nunca caducan.
+   */
+  plazoCaducidadEnMs?: number;
 }
 
 /**
@@ -125,10 +133,31 @@ export interface PaqueteAlmacenado {
   ficha: FichaNegocio;
 }
 
+/** Enlace generado para un paquete. */
+export interface EnlaceGenerado {
+  token: string;
+  idLote: string;
+  /** Marcas de cuando se creó y de cuándo caduca. */
+  creadoMs: number;
+  caducaMs: number;
+}
+
 export interface AlmacenDeLotes {
   guardar(id: string, paquete: PaqueteAlmacenado): void;
   /** Devuelve el paquete o `null` si el id no existe. */
   obtener(id: string): PaqueteAlmacenado | null;
+  /**
+   * Genera y almacena un enlace para el paquete `idLote`. Devuelve el
+   * `EnlaceGenerado` con el token. El plazo de caducidad se pasa aquí
+   * para que el almacén no necesite conocer las opciones del servidor.
+   */
+  generarEnlace(idLote: string, plazoMs: number): EnlaceGenerado;
+  /**
+   * Consume un token de enlace: si es válido y no ha caducado, devuelve el
+   * paquete y lo invalida. Si no existe, está caducado o ya se canjeó,
+   * devuelve `null`. Nunca revela cuál de esas tres razones aplica.
+   */
+  canjearEnlace(token: string): PaqueteAlmacenado | null;
   cerrar(): void;
 }
 
@@ -139,6 +168,7 @@ export interface AlmacenDeLotes {
  */
 export class AlmacenDeLotesEnMemoria implements AlmacenDeLotes {
   private readonly paquetes: Map<string, PaqueteAlmacenado> = new Map();
+  private readonly enlaces: Map<string, EnlaceGenerado> = new Map();
 
   guardar(id: string, paquete: PaqueteAlmacenado): void {
     this.paquetes.set(id, paquete);
@@ -149,8 +179,31 @@ export class AlmacenDeLotesEnMemoria implements AlmacenDeLotes {
     return v === undefined ? null : v;
   }
 
+  generarEnlace(idLote: string, plazoMs: number): EnlaceGenerado {
+    const token = randomBytes(32).toString("hex");
+    const ahoraMs = Date.now();
+    const enlace: EnlaceGenerado = {
+      token,
+      idLote,
+      creadoMs: ahoraMs,
+      caducaMs: ahoraMs + plazoMs,
+    };
+    this.enlaces.set(token, enlace);
+    return enlace;
+  }
+
+  canjearEnlace(token: string): PaqueteAlmacenado | null {
+    const enlace = this.enlaces.get(token);
+    if (enlace === undefined) return null;
+    if (Date.now() > enlace.caducaMs) return null;
+    this.enlaces.delete(token);
+    const paquete = this.paquetes.get(enlace.idLote);
+    return paquete ?? null;
+  }
+
   cerrar(): void {
     this.paquetes.clear();
+    this.enlaces.clear();
   }
 }
 
@@ -216,6 +269,10 @@ export function crearServidor(
   const redactor: Redactor = opciones?.redactor ?? new RedactorFalso();
   const host = opciones?.host ?? "127.0.0.1";
   const puerto = opciones?.puerto ?? 0;
+  const plazoCaducidadMs =
+    opciones?.plazoCaducidadEnMs !== undefined && opciones.plazoCaducidadEnMs > 0
+      ? opciones.plazoCaducidadEnMs
+      : PLAZO_CADUCIDAD_DEFECTO_MS;
 
   return new Promise<ServidorLevantado>((resolver, rechazar) => {
     const server: Server = http.createServer((req, res) => {
@@ -227,6 +284,7 @@ export function crearServidor(
         almacen,
         redactor,
         maxReseñasPorLote,
+        plazoCaducidadMs,
       }).catch((error: unknown) => {
         const mensaje = error instanceof Error ? error.message : String(error);
         process.stderr.write(`[servicio] error no controlado: ${mensaje}\n`);
@@ -278,6 +336,7 @@ interface ContextoManejo {
   almacen: AlmacenDeLotes;
   redactor: Redactor;
   maxReseñasPorLote: number;
+  plazoCaducidadMs: number;
 }
 
 async function manejarPeticion(
@@ -302,6 +361,23 @@ async function manejarPeticion(
       manejarGETPaquete(req, res, ctx, id);
       return;
     }
+    // /lotes/:id/enlace — genera un token para el paquete.
+    if (partes.length === 2 && partes[1] === "enlace" && id.length > 0) {
+      await manejarGETEnlace(req, res, ctx, id);
+      return;
+    }
+    // /lotes/:id — redirige a la descarga directa del paquete (RS.14).
+    if (partes.length === 1 && id.length > 0) {
+      manejarGETPaquete(req, res, ctx, id);
+      return;
+    }
+  }
+
+  // GET /enlace/:token — canjea el enlace y devuelve el CSV.
+  if (metodo === "GET" && url.startsWith("/enlace/")) {
+    const token = url.slice("/enlace/".length);
+    await manejarGETEnlaceToken(req, res, ctx, token);
+    return;
   }
 
   if (metodo === "GET" && url === "/salud") {
@@ -437,6 +513,43 @@ async function manejarPOSTLotes(
   };
 
   responderJSON(res, 200, salida);
+}
+
+async function manejarGETEnlace(
+  _req: IncomingMessage,
+  res: ServerResponse,
+  ctx: ContextoManejo,
+  id: string,
+): Promise<void> {
+  const paquete = ctx.almacen.obtener(id);
+  if (paquete === null) {
+    responderJSON(res, 404, { motivo: "no se encontró el paquete." });
+    return;
+  }
+  const enlace = ctx.almacen.generarEnlace(id, ctx.plazoCaducidadMs);
+  responderJSON(res, 200, {
+    token: enlace.token,
+    url: `/enlace/${enlace.token}`,
+  });
+}
+
+async function manejarGETEnlaceToken(
+  _req: IncomingMessage,
+  res: ServerResponse,
+  ctx: ContextoManejo,
+  token: string,
+): Promise<void> {
+  void ctx;
+  const paquete = ctx.almacen.canjearEnlace(token);
+  if (paquete === null) {
+    responderJSON(res, 410, { motivo: "el enlace no es válido o ha caducado." });
+    return;
+  }
+  for (const [k, v] of ENCABEZADOS_CSV) {
+    res.setHeader(k, v);
+  }
+  res.statusCode = 200;
+  res.end(paquete.csv);
 }
 
 function manejarGETPaquete(
