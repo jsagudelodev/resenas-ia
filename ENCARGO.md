@@ -418,6 +418,29 @@ minuto del dueño; una publicada de más no se recoge.
 
 ---
 
+---
+
+## 6d. V4 — el idioma del negocio
+
+- ⬜ **RS.23 — Cada respuesta dice qué le costó al cliente.**
+  Para cobrar hay que poder responder «¿por qué me descontaste 8 y no 10?» sin
+  abrir la base de datos. Hoy el lote devuelve contadores agregados (`listas`,
+  `paraRevision`, `fallaron`) y **el detalle por reseña no dice si se cobró**.
+  *Cierre:* (1) cada resultado del lote dice **si se cobró y por qué** —una
+  entregada como lista se cobra; una de revisión humana o fallida, no—;
+  (2) la suma de lo cobrado por reseña **cuadra exactamente** con lo que
+  descontó el saldo de RS.16, y hay un test que lo comprueba sobre un lote con
+  las tres clases mezcladas; (3) el paquete exportado (RS.12) lleva esa columna,
+  y los lotes guardados **antes** de este ítem se siguen leyendo igual.
+
+  > **Para el evaluador, no para el agente.** Este ítem está elegido para
+  > estrenar en vivo las cuatro piezas de núcleo del 2026-09-06 que solo están
+  > probadas por mutación: toca una firma usada en **ocho archivos** (gate de
+  > commit parcial), obliga a demostrar la regla 6 (guarda de `contraprueba`),
+  > pide anotar el cierre (gate de anotación afirmada) y trae trabajo suficiente
+  > para llegar a la zona de cierre con poco margen (la prórroga). Si ninguna
+  > dispara, es que el arnés ya no las necesita — y eso también es un dato.
+
 ## 7. Cómo se mide esta tanda (para el evaluador, no para el agente)
 
 - **La variable que este proyecto aísla.** Los dos anteriores metieron
