@@ -158,6 +158,25 @@ export async function generarRespuesta(
         intentoDeInyeccion: deteccion.intentos,
       };
     }
+    // RS.20: la respuesta pasó la revisión y la reseña no alega nada grave,
+    // PERO si la reseña TRAE un intento de inyección detectado, tampoco se
+    // entrega como lista: una respuesta que obedeció al atacante, por mucho
+    // que el saneador la haya protegido, no puede продаваться como si fuera
+    // del negocio. Se entrega como borrador a revisión humana con el motivo
+    // de la inyección — la misma mecánica que RS.6 para acusaciones graves.
+    if (deteccion.intentos.length > 0) {
+      const motivosInyeccion = deteccion.intentos.map((i) => i.motivo).join("; ");
+      return {
+        revisionHumana: true,
+        borrador: limpio,
+        motivo: `Instrucción disfrazada detectada: ${motivosInyeccion}`,
+        idioma: idiomaRes.idioma,
+        // RS.6 pide `acusaciones`; para RS.20 la analogía es `intentoDeInyeccion`.
+        // Añadimos ambos para mantener la firma de RespuestaParaRevision.
+        acusaciones: [],
+        intentoDeInyeccion: deteccion.intentos,
+      };
+    }
     return {
       texto: limpio,
       idioma: idiomaRes.idioma,
