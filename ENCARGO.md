@@ -330,6 +330,35 @@ minuto del dueño; una publicada de más no se recoge.
   que exista y que no exista tienen que ser indistinguibles desde fuera;
   (3) los enlaces emitidos **sobreviven a reiniciar el proceso**.
 
+- ⬜ **RS.19 — El redactor de verdad.**
+  Todo lo construido hasta aquí rodea al LLM y ninguna pieza lo llama: `src/`
+  solo tiene `RedactorFalso`. El producto **no ha escrito una sola respuesta**,
+  así que el criterio de vendible de la §4 no se ha comprobado en ningún punto.
+  Hace falta la implementación que habla con un modelo por HTTP, sin SDK.
+
+  **La regla 7 no se toca:** la suite sigue corriendo sin red y sin
+  credenciales. Eso obliga a poner el doble donde va —en el **transporte
+  HTTP**, no en la interfaz `Redactor` entera—, porque lo que hay que probar es
+  justo lo que hoy nadie prueba: cómo se arma la petición y qué se hace con lo
+  que vuelve.
+
+  *Cierre:* (1) existe un redactor real, configurado por variables de entorno,
+  y **sus tests ejercitan el camino completo con un transporte falso** —
+  petición armada, respuesta parseada— sin salir a la red;
+  (2) **la salida del modelo no se confía**: una respuesta vacía, cortada a
+  mitad, envuelta en markdown o que no es texto produce un motivo comprensible
+  y deja esa reseña **sin respuesta y marcada**, sin tumbar el lote — y lo que
+  sí llega pasa por la revisión de RS.4 como cualquier otra;
+  (3) **sin credencial el sistema arranca igual** y dice qué falta; con una
+  credencial que el proveedor rechaza (401) o que topa cuota (429) **no se
+  reintenta en bucle**: hay un tope, y el motivo se registra sin filtrar la
+  clave (regla 10).
+
+  > **Decisión pendiente del usuario, no del agente:** qué proveedor y qué
+  > credencial. Hasta que exista, este ítem cierra con el transporte falso — que
+  > es todo lo que la regla 7 permite verificar—, y la primera respuesta escrita
+  > sobre reseñas reales queda como paso aparte, fuera del backlog.
+
 ---
 
 ## 7. Cómo se mide esta tanda (para el evaluador, no para el agente)
