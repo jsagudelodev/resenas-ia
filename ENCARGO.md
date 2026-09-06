@@ -239,7 +239,7 @@ minuto del dueño; una publicada de más no se recoge.
   **llegar de verdad** al camino que escribe el log: si el montaje no lo hace
   entrar, el test no vale.
 
-- ⬜ **RS.14 — Subir el lote y recibir el paquete.**
+- ✅ **RS.14 — Subir el lote y recibir el paquete.**
   El endpoint que junta todo lo anterior.
   *Cierre:* (1) `POST` con el lote y la ficha devuelve el resumen y un
   identificador para descargar el paquete; (2) un lote vacío o corrupto devuelve
