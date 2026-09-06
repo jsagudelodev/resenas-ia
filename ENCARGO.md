@@ -422,7 +422,7 @@ minuto del dueño; una publicada de más no se recoge.
 
 ## 6d. V4 — el idioma del negocio
 
-- ⬜ **RS.23 — Cada respuesta dice qué le costó al cliente.**
+- ✅ **RS.23 — Cada respuesta dice qué le costó al cliente.**
   Para cobrar hay que poder responder «¿por qué me descontaste 8 y no 10?» sin
   abrir la base de datos. Hoy el lote devuelve contadores agregados (`listas`,
   `paraRevision`, `fallaron`) y **el detalle por reseña no dice si se cobró**.
