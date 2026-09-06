@@ -385,7 +385,7 @@ minuto del dueño; una publicada de más no se recoge.
   vale; (3) el contador del lote refleja el cambio (esa reseña cuenta como
   revisión, no como lista) y **no se cobra** (RS.16).
 
-- ⬜ **RS.21 — El proveedor se configura, no se escribe en el código.**
+- ✅ **RS.21 — El proveedor se configura, no se escribe en el código.**
   `TransporteHttpReal` fija `model: "gpt-4o-mini"` dentro del código, así que
   una clave de otro proveedor no sirve aunque su endpoint sea compatible —
   medido con Gemini, que responde por su endpoint OpenAI-compatible y no se
