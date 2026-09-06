@@ -44,6 +44,8 @@ export interface FilaPaquete {
   idioma: Idioma;
   /** Cuántos intentos de inyección se detectaron en esta reseña (RS.5). */
   intentosDeInyeccion: number;
+  /** RS.23 — Si esta respuesta se cobró al cliente. */
+  cobrada: boolean;
 }
 
 /** Cabecera del CSV, en el mismo orden que devolvemos al parsear. */
@@ -58,6 +60,7 @@ export const CABECERA_CSV: ReadonlyArray<string> = [
   "motivo",
   "idioma",
   "intentos_inyeccion",
+  "cobrada",
 ];
 
 /** Separador que un Excel en español reconoce sin asistente de importación. */
@@ -109,6 +112,7 @@ export function filasDelLote(
         motivo: "el lote no devolvió resultado para esta reseña.",
         idioma: "es",
         intentosDeInyeccion: 0,
+        cobrada: false,
       });
       continue;
     }
@@ -141,6 +145,7 @@ export function filasDelLote(
             : "",
       idioma: resultado.idioma,
       intentosDeInyeccion: resultado.intentoDeInyeccion.length,
+      cobrada: resultado.cobrada,
     });
   }
 
@@ -253,6 +258,7 @@ export function exportarCSV(filas: ReadonlyArray<FilaPaquete>): string {
       escaparCelda(fila.motivo),
       escaparCelda(fila.idioma),
       escaparCelda(String(fila.intentosDeInyeccion)),
+      escaparCelda(fila.cobrada ? "1" : "0"),
     ];
     lineas.push(celdas.join(SEPARADOR_CSV));
   }
@@ -399,7 +405,7 @@ export function parsearCSV(contenido: string): ResultadoLecturaCSV {
       errores.push(`la fila ${n} tiene ${campos.length} columnas, se esperaban ${CABECERA_CSV.length}.`);
       continue;
     }
-    const [indice, autor, estrellas, fecha, textoResena, estado, respuesta, motivo, idioma, intentos] =
+    const [indice, autor, estrellas, fecha, textoResena, estado, respuesta, motivo, idioma, intentos, cobrada] =
       campos.map((campo) => campo ?? "");
 
     if (estado === undefined || !esEstadoConocido(estado)) {
@@ -422,6 +428,7 @@ export function parsearCSV(contenido: string): ResultadoLecturaCSV {
       motivo: motivo ?? "",
       idioma,
       intentosDeInyeccion: Number(intentos ?? ""),
+      cobrada: cobrada === "1",
     });
   }
 

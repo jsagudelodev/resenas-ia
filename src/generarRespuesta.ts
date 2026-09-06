@@ -30,6 +30,11 @@ export interface RespuestaLista {
    * al atacante.
    */
   intentoDeInyeccion: ReadonlyArray<IntentoDeInyeccion>;
+  /**
+   * RS.23 — Si esta respuesta se cobró al cliente. Las respuestas listas SI
+   * se cobran: el dueño recibe algo usable.
+   */
+  cobrada: true;
 }
 
 export interface RespuestaNoDisponible {
@@ -47,6 +52,10 @@ export interface RespuestaNoDisponible {
    * la reseña marcada como «no disponible» debe poder explicar por qué.
    */
   intentoDeInyeccion: ReadonlyArray<IntentoDeInyeccion>;
+  /**
+   * RS.23 — Esta respuesta NO se cobró: no hay nada usable para el dueño.
+   */
+  cobrada: false;
 }
 
 /**
@@ -74,6 +83,11 @@ export interface RespuestaParaRevision {
   acusaciones: ReadonlyArray<ResultadoGravedad>;
   /** Intentos de inyección (RS.5) de la misma reseña, si los hubo. */
   intentoDeInyeccion: ReadonlyArray<IntentoDeInyeccion>;
+  /**
+   * RS.23 — Esta respuesta NO se cobró: el dueño recibe un borrador, no una
+   * respuesta lista para pegar.
+   */
+  cobrada: false;
 }
 
 export type ResultadoRedaccion =
@@ -126,6 +140,7 @@ export async function generarRespuesta(
         motivo: "el redactor devolvió una respuesta vacía.",
         idioma: idiomaRes.idioma,
         intentoDeInyeccion: deteccion.intentos,
+        cobrada: false,
       };
     }
     const limpio = texto.trim();
@@ -139,6 +154,7 @@ export async function generarRespuesta(
         motivo: `la respuesta fue retenida por la revisión: ${revision.motivo}`,
         idioma: idiomaRes.idioma,
         intentoDeInyeccion: deteccion.intentos,
+        cobrada: false,
       };
     }
     // RS.6: la respuesta pasó la revisión de RS.4, pero eso no basta. Si la
@@ -156,6 +172,7 @@ export async function generarRespuesta(
         idioma: idiomaRes.idioma,
         acusaciones,
         intentoDeInyeccion: deteccion.intentos,
+        cobrada: false,
       };
     }
     // RS.20: la respuesta pasó la revisión y la reseña no alega nada grave,
@@ -175,12 +192,14 @@ export async function generarRespuesta(
         // Añadimos ambos para mantener la firma de RespuestaParaRevision.
         acusaciones: [],
         intentoDeInyeccion: deteccion.intentos,
+        cobrada: false,
       };
     }
     return {
       texto: limpio,
       idioma: idiomaRes.idioma,
       intentoDeInyeccion: deteccion.intentos,
+      cobrada: true,
     };
   } catch (error: unknown) {
     const motivo = error instanceof Error
@@ -191,6 +210,7 @@ export async function generarRespuesta(
       motivo,
       idioma: idiomaRes.idioma,
       intentoDeInyeccion: deteccion.intentos,
+      cobrada: false,
     };
   }
 }

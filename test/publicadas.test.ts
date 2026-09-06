@@ -180,6 +180,7 @@ function filaPrueba(autor: string): FilaPaquete {
     motivo: "",
     idioma: "es",
     intentosDeInyeccion: 0,
+    cobrada: true,
   };
 }
 

@@ -106,6 +106,7 @@ export async function procesarLote(
         motivo,
         idioma: ficha.idiomaPorDefecto,
         intentoDeInyeccion: [],
+        cobrada: false,
       };
     }
     resultados.push(resultado);

@@ -31,11 +31,11 @@ import type {
 import type { ReseñaNegocio } from "../src/convertirReseñas.js";
 
 function lista(texto: string): RespuestaLista {
-  return { texto, idioma: "es", intentoDeInyeccion: [] };
+  return { texto, idioma: "es", intentoDeInyeccion: [], cobrada: true };
 }
 
 function noDisponible(motivo: string): RespuestaNoDisponible {
-  return { noDisponible: true, motivo, idioma: "es", intentoDeInyeccion: [] };
+  return { noDisponible: true, motivo, idioma: "es", intentoDeInyeccion: [], cobrada: false };
 }
 
 function paraRevision(borrador: string, motivo: string): RespuestaParaRevision {
@@ -46,6 +46,7 @@ function paraRevision(borrador: string, motivo: string): RespuestaParaRevision {
     idioma: "es",
     acusaciones: [],
     intentoDeInyeccion: [],
+    cobrada: false,
   };
 }
 
@@ -97,6 +98,7 @@ function filasEscollo(): FilaPaquete[] {
       motivo: "",
       idioma: "es",
       intentosDeInyeccion: 0,
+      cobrada: true,
     },
     {
       indice: 1,
@@ -109,6 +111,7 @@ function filasEscollo(): FilaPaquete[] {
       motivo: "la reseña alega una posible intoxicación; hay que verificarla.",
       idioma: "es",
       intentosDeInyeccion: 2,
+      cobrada: false,
     },
     {
       indice: 2,
@@ -121,6 +124,7 @@ function filasEscollo(): FilaPaquete[] {
       motivo: "",
       idioma: "en",
       intentosDeInyeccion: 0,
+      cobrada: false,
     },
   ];
 }

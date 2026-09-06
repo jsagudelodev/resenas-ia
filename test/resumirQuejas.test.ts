@@ -22,11 +22,11 @@ import type {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function lista(texto: string, idioma: "es" | "en" = "es"): RespuestaLista {
-  return { texto, idioma, intentoDeInyeccion: [] };
+  return { texto, idioma, intentoDeInyeccion: [], cobrada: true };
 }
 
 function noDisponible(motivo: string, idioma: "es" | "en" = "es"): RespuestaNoDisponible {
-  return { noDisponible: true, motivo, idioma, intentoDeInyeccion: [] };
+  return { noDisponible: true, motivo, idioma, intentoDeInyeccion: [], cobrada: false };
 }
 
 function paraRevision(
@@ -40,6 +40,7 @@ function paraRevision(
     idioma,
     acusaciones: [],
     intentoDeInyeccion: [],
+    cobrada: false,
   };
 }
 
