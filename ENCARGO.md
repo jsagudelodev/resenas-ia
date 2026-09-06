@@ -397,7 +397,7 @@ minuto del dueño; una publicada de más no se recoge.
   proveedor rechaza produce un motivo comprensible **sin filtrar la clave**
   (regla 10) — y la suite sigue sin red.
 
-- ⬜ **RS.22 — Lo que el revisor no sabía que había que revisar.**
+- ✅ **RS.22 — Lo que el revisor no sabía que había que revisar.**
   El revisor de RS.4 mira lo que se le dijo: culpa, dinero, descuentos, datos
   que no están en la ficha. El modelo real trajo tres cosas que no estaban en
   esa lista, y las tres son publicables hoy: **anunciar que el negocio cerró**,
