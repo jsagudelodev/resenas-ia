@@ -282,6 +282,24 @@ minuto del dueño; una publicada de más no se recoge.
 
 ---
 
+## 6b. V2 — lo que pide el primer cliente
+
+> **V1 cerrada el 2026-09-05 (15/15).** Estos ítems salen de lo que hace falta
+> para cobrar, no de lo que quedaba bonito por terminar.
+
+- ⬜ **RS.15 — Lo que ya se publicó no se vuelve a entregar.**
+  El dueño pega las respuestas en Google y la semana siguiente manda el lote
+  otra vez, con las reseñas viejas dentro. Volver a entregarle lo que ya publicó
+  le hace revisar cincuenta respuestas para encontrar las tres nuevas, y es lo
+  que hace que deje de usarlo.
+  *Cierre:* (1) una respuesta se puede marcar como publicada, y el paquete
+  siguiente la trae **separada** de las nuevas, no mezclada ni borrada;
+  (2) marcar dos veces la misma respuesta **no la duplica** ni cambia la fecha
+  de la primera; (3) lo marcado **sobrevive a reiniciar el proceso**, y los
+  paquetes guardados antes de este ítem se siguen leyendo igual que antes.
+
+---
+
 ## 7. Cómo se mide esta tanda (para el evaluador, no para el agente)
 
 - **La variable que este proyecto aísla.** Los dos anteriores metieron
