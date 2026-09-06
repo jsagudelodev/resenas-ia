@@ -101,6 +101,84 @@ describe("ServicioSaldoCliente", () => {
     }
   });
 
+  // ────────────────────────── RS.17 — Códigos de compra ───────────────────────
+
+  it("canjear un código inexistente devuelve error genérico (cierre punto 3)", () => {
+    const svc = new ServicioSaldoCliente(":memory:");
+    try {
+      const resultado = svc.canjear("CODIGO-INVENTADO-XYZ");
+      equal(resultado.exitoso, false);
+      // El mensaje NO revela si el código existe ni cuántos hay.
+      ok(resultado.motivo!.includes("inválido") || resultado.motivo!.includes("no encontrado"));
+      equal(svc.consultar("anonimo").respuestas, 0);
+    } finally {
+      svc.cerrar();
+    }
+  });
+
+  it("canjear un código válido recarga el saldo una vez y lo consume (cierre punto 1)", () => {
+    const svc = new ServicioSaldoCliente(":memory:");
+    try {
+      svc.registrarCodigo("PACK-20-RESPUESTAS", 20);
+      const resultado = svc.canjear("PACK-20-RESPUESTAS");
+      ok(resultado.exitoso);
+      equal(resultado.cliente, "anonimo");
+      equal(resultado.respuestasAgregadas, 20);
+      equal(svc.consultar("anonimo").respuestas, 20);
+    } finally {
+      svc.cerrar();
+    }
+  });
+
+  it("canjear el mismo código dos veces falla en el segundo intento (cierre punto 2)", () => {
+    const svc = new ServicioSaldoCliente(":memory:");
+    try {
+      svc.registrarCodigo("PACK-10", 10);
+      const r1 = svc.canjear("PACK-10");
+      ok(r1.exitoso);
+
+      const r2 = svc.canjear("PACK-10");
+      equal(r2.exitoso, false);
+      ok(r2.motivo!.includes("inválido") || r2.motivo!.includes("no encontrado") || r2.motivo!.includes("usado"));
+      // El saldo sigue siendo 10, no se agregó dos veces.
+      equal(svc.consultar("anonimo").respuestas, 10);
+    } finally {
+      svc.cerrar();
+    }
+  });
+
+  it("canjear dos códigos idénticos que llegan a la vez no recarga dos veces (BEGIN IMMEDIATE)", () => {
+    // Simula dos canjes simultáneos: serializados por la misma conexión,
+    // el primero consume el código, el segundo obtiene error genérico.
+    const svc = new ServicioSaldoCliente(":memory:");
+    try {
+      svc.registrarCodigo("PACK-5-SIMULTANEO", 5);
+      const r1 = svc.canjear("PACK-5-SIMULTANEO");
+      const r2 = svc.canjear("PACK-5-SIMULTANEO");
+      const exitosos = [r1, r2].filter((r) => r.exitoso);
+      equal(exitosos.length, 1);
+      // El saldo total es exactamente 5, no 10.
+      equal(svc.consultar("anonimo").respuestas, 5);
+    } finally {
+      svc.cerrar();
+    }
+  });
+
+  it("registrarCodigo es idempotente: redefine cantidad si el código ya existe", () => {
+    const svc = new ServicioSaldoCliente(":memory:");
+    try {
+      svc.registrarCodigo("PACK-10", 10);
+      svc.registrarCodigo("PACK-10", 20); // red费ine
+      const r = svc.canjear("PACK-10");
+      ok(r.exitoso);
+      equal(r.respuestasAgregadas, 20);
+    } finally {
+      svc.cerrar();
+    }
+  });
+
+  // ──────────────────────────────── Fin RS.17 ─────────────────────────────────
+
   it("el saldo sobrevive a reiniciar el servicio (cierre punto 3)", () => {
     const ruta = join(tmpdir(), `saldo-test-${Date.now()}.db`);
     const svc1 = new ServicioSaldoCliente(ruta);

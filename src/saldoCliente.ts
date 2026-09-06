@@ -31,9 +31,31 @@ CREATE TABLE IF NOT EXISTS saldo_cliente (
 )
 `;
 
+const CREAR_CODIGOS = `
+CREATE TABLE IF NOT EXISTS codigos_compra (
+  codigo TEXT PRIMARY KEY,
+  respuestas INTEGER NOT NULL CHECK (respuestas > 0),
+  canjeado INTEGER NOT NULL DEFAULT 0 CHECK (canjeado IN (0, 1))
+)
+`;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // API pública
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** Resultado de intentar canjear un código de compra. */
+export interface CanjearCodigo {
+  exitoso: boolean;
+  /** Siempre `"anonimo"` en esta versión. */
+  cliente: string;
+  /** Solo presente cuando `exitoso` es `true`. */
+  respuestasAgregadas?: number;
+  /**
+   * Solo presente cuando `exitoso` es `false`.
+   * Mensaje genérico: no revela si el código existía ni cuántos hay.
+   */
+  motivo?: string;
+}
 
 export interface SaldoCliente {
   /** Identificador del cliente. */
@@ -73,6 +95,7 @@ export class ServicioSaldoCliente {
   constructor(ruta: string) {
     this.base = new DatabaseSync(ruta);
     this.base.exec(CREAR_SALDO);
+    this.base.exec(CREAR_CODIGOS);
   }
 
   /**
@@ -156,6 +179,65 @@ export class ServicioSaldoCliente {
 
     return { exitoso: true, cliente, saldoActual: saldoActual - listas };
   }
+
+  // ─────────────────────────────── RS.17 ─────────────────────────────────────
+
+  /**
+   * Registra un código de compra con su cantidad de respuestas.
+   * Si el código ya existe, redefine la cantidad (idempotente para reventa).
+   */
+  registrarCodigo(codigo: string, respuestas: number): void {
+    this.base
+      .prepare(
+        `INSERT INTO codigos_compra (codigo, respuestas, canjeado)
+         VALUES (?, ?, 0)
+         ON CONFLICT(codigo) DO UPDATE SET respuestas = excluded.respuestas, canjeado = 0`,
+      )
+      .run(codigo, respuestas);
+  }
+
+  /**
+   * Canjea un código de compra. Si es válido y no usado, añade las respuestas
+   * al saldo del cliente `"anonimo"` y marca el código como consumido.
+   * Si ya fue usado o no existe, devuelve un mensaje genérico sin revelar
+   * cuál de las dos situaciones ocurre (punto 3 del cierre de RS.17).
+   *
+   * La atomicidad de canje + recarga usa una transacción SQLite con
+   * `BEGIN IMMEDIATE` para serializar dos intentos simultáneos del mismo
+   * código: solo el primero tiene éxito.
+   */
+  canjear(codigo: string): CanjearCodigo {
+    try {
+      // BEGIN IMMEDIATE: acquire write-lock; second caller blocks until first
+      // commits or rolls back, guaranteeing at-most-once semantics.
+      this.base.exec("BEGIN IMMEDIATE");
+
+      const fila = this.base
+        .prepare("SELECT respuestas, canjeado FROM codigos_compra WHERE codigo = ?")
+        .get(codigo) as { respuestas: number; canjeado: number } | undefined;
+
+      if (!fila || fila.canjeado === 1) {
+        // Código inexistente o ya usado: mensaje genérico.
+        this.base.exec("ROLLBACK");
+        return { exitoso: false, cliente: "anonimo", motivo: "El código es inválido o ya fue usado." };
+      }
+
+      // Marcar como canjeado y recargar saldo en la misma transacción.
+      this.base
+        .prepare("UPDATE codigos_compra SET canjeado = 1 WHERE codigo = ?")
+        .run(codigo);
+
+      this.agregar("anonimo", fila.respuestas);
+
+      this.base.exec("COMMIT");
+      return { exitoso: true, cliente: "anonimo", respuestasAgregadas: fila.respuestas };
+    } catch {
+      this.base.exec("ROLLBACK");
+      return { exitoso: false, cliente: "anonimo", motivo: "El código es inválido o ya fue usado." };
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
 
   /** Libera la conexión. */
   cerrar(): void {
