@@ -1,5 +1,9 @@
 # Reseñas AI — encargo
 
+> **La venta vive aparte:** que se quiere lograr, a cuanto se cobra y el
+> ejemplo real de uso estan en [`docs/la-venta.md`](docs/la-venta.md). Este
+> documento no lo repite: el precio cambia y el backlog no.
+>
 > **Qué es esto.** El documento que gobierna el proyecto: qué se construye, con
 > qué reglas y en qué orden. Lo escribe el evaluador humano; **Argos construye de
 > punta a punta**. El backlog vivo es la sección final: un ítem `RS.*` por tanda,
