@@ -179,6 +179,31 @@ export function separarParaRevisionYFallida(
   return pilas;
 }
 
+/**
+ * Separa las filas del paquete entre las que ya fueron publicadas y las nuevas.
+ * Punto 1 del cierre de RS.15: las publicadas van separadas, no mezcladas.
+ *
+ * El criterio de separación es el `autor` de la fila contra el conjunto de
+ * autores ya marcados como publicados. Se usa autor (no clave de prompt) porque
+ * es lo que el dueño tiene disponible cuandoarma el lote: conoce los nombres de
+ * sus clientes, no las claves sha256 del almacén.
+ */
+export function separarPublicadasYNuevas(
+  filas: ReadonlyArray<FilaPaquete>,
+  publicadas: ReadonlySet<string>,
+): { publicadas: FilaPaquete[]; nuevas: FilaPaquete[] } {
+  const pubs: FilaPaquete[] = [];
+  const nuevas: FilaPaquete[] = [];
+  for (const fila of filas) {
+    if (publicadas.has(fila.autor)) {
+      pubs.push(fila);
+    } else {
+      nuevas.push(fila);
+    }
+  }
+  return { publicadas: pubs, nuevas };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CSV: escribir y releer con los mismos valores (puntos 1 y 3 del cierre)
 // ─────────────────────────────────────────────────────────────────────────────

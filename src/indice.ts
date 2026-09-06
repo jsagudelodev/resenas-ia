@@ -67,6 +67,7 @@ import {
   filasDelLote,
   filasListasDelLote,
   separarParaRevisionYFallida,
+  separarPublicadasYNuevas,
   CABECERA_CSV,
   SEPARADOR_CSV,
   BOM_UTF8,
@@ -81,7 +82,9 @@ import {
   AlmacenRespuestasEnMemoria,
   AlmacenRespuestasSqlite,
   RedactorConMemoria,
+  MarcarRespuestasPublicadas,
   type AlmacenRespuestas,
+  type RespuestaPublicada,
 } from "./almacenRespuestas.js";
 
 // RS.14: servicio HTTP que recibe el lote y devuelve el paquete.
@@ -137,6 +140,7 @@ export {
   AlmacenRespuestasEnMemoria,
   AlmacenRespuestasSqlite,
   RedactorConMemoria,
+  MarcarRespuestasPublicadas,
   // RS.14: servicio HTTP.
   crearServidor,
   MAX_RESEÑAS_POR_LOTE_DEFECTO,
@@ -180,6 +184,8 @@ export type {
   ResumenDeQuejas,
   MotivoQueja,
   AlmacenRespuestas,
+  // RS.15
+  RespuestaPublicada,
   // RS.12: tipos del paquete.
   FilaPaquete,
   EstadoEnPaquete,
