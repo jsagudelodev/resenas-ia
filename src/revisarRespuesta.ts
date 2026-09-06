@@ -19,6 +19,8 @@ export interface RevisionOk {
 export interface RevisionRechazada {
   ok: false;
   motivo: string;
+  /** Categoría de la retención (RS.22). */
+  razon: "patron_prohibido" | "dato_no_sostenido" | "texto_como_resena";
 }
 
 export type ResultadoRevision = RevisionOk | RevisionRechazada;
@@ -61,6 +63,11 @@ const PROHIBIDAS: ReadonlyArray<{ patron: RegExp; motivo: string }> = [
   {
     patron: /\b(compensaci[óo]n\s+econ[óo]mica|indemnizaci[óo]n)\b/i,
     motivo: "la respuesta menciona compensación o indemnización económica.",
+  },
+  // RS.22: anunciar cierre, cese o traslado del negocio.
+  {
+    patron: /\b(cierra|ha\s+cerrado|ha\s+dejado\s+de\s+funcionar|ceased|ces(?:ado|es|ae)\b|ha\s+cesado|traslad(?:ado|ar|amos?)|se\s+ha\s+trasladado|baja\s+definitiva|ya\s+no\s+est[áa]\s+operando)\b/i,
+    motivo: "la respuesta anuncia el cierre, cese o traslado del negocio.",
   },
 ];
 
@@ -154,6 +161,22 @@ function urlsEn(texto: string): string[] {
 // Función pública
 // ─────────────────────────────────────────────────────────────────────────────
 
+// RS.22: texto presentado como si fuera la reseña del cliente.
+const TEXTO_COMO_RESENA: ReadonlyArray<{ patron: RegExp; motivo: string }> = [
+  {
+    patron: /\bReseña\s+de\s+[\wÁÉÍÓÚáéíóúÑñ]+[\s,;:]/i,
+    motivo: "la respuesta incluye texto que se presenta como la reseña del cliente.",
+  },
+  {
+    // Bloque entre comillas de longitud razonable: un fragmento de reseña
+    // transcrito literalmente, como hizo el modelo real ("Reseña de Tourist22:
+    // I had high hopes…"). El lookahead busca palabras de sentimiento tras la
+    // comilla de cierre, que es donde el modelo las suele poner.
+    patron: /[""][^"]{8,}[""]/i,
+    motivo: "la respuesta incluye texto que se presenta como la reseña del cliente.",
+  },
+];
+
 /**
  * Revisa si una respuesta puede entregarse al dueño del negocio.
  *
@@ -169,13 +192,13 @@ export function revisar(
   ficha: FichaNegocio,
 ): ResultadoRevision {
   if (typeof texto !== "string" || texto.trim().length === 0) {
-    return { ok: false, motivo: "la respuesta está vacía." };
+    return { ok: false, motivo: "la respuesta está vacía.", razon: "patron_prohibido" };
   }
 
   // (1) Patrones prohibidos.
   for (const regla of PROHIBIDAS) {
     if (regla.patron.test(texto)) {
-      return { ok: false, motivo: regla.motivo };
+      return { ok: false, motivo: regla.motivo, razon: "patron_prohibido" };
     }
   }
 
@@ -187,6 +210,7 @@ export function revisar(
       return {
         ok: false,
         motivo: `la respuesta menciona un teléfono (${t}) que no está en la ficha.`,
+        razon: "dato_no_sostenido",
       };
     }
   }
@@ -195,6 +219,7 @@ export function revisar(
       return {
         ok: false,
         motivo: `la respuesta menciona un horario (${h}) que no está en la ficha.`,
+        razon: "dato_no_sostenido",
       };
     }
   }
@@ -203,7 +228,15 @@ export function revisar(
       return {
         ok: false,
         motivo: `la respuesta menciona una web o URL (${u}) que no está en la ficha.`,
+        razon: "dato_no_sostenido",
       };
+    }
+  }
+
+  // RS.22, punto 3: texto presentado como la reseña del cliente.
+  for (const regla of TEXTO_COMO_RESENA) {
+    if (regla.patron.test(texto)) {
+      return { ok: false, motivo: regla.motivo, razon: "texto_como_resena" };
     }
   }
 

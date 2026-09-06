@@ -281,3 +281,126 @@ test("el cableado es real: sin revisión, una respuesta prohibida SÍ pasaría c
   const res = await generarRespuesta(reseña1, ficha, redactorMalo);
   assert.equal("noDisponible" in res, true);
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RS.22 — Lo que el revisor no sabía que había que revisar.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── RS.22, punto 1: cierre / cese / traslado del negocio ────────────────────
+
+test("revisar: anunciar cierre del negocio se rechaza con razon=patron_prohibido", () => {
+  const r = revisar(
+    "Lamentamos informar que nuestro restaurante ha cerrado sus puertas de forma permanente.",
+    ficha,
+  );
+  assert.equal(r.ok, false);
+  if (r.ok) return;
+  assert.equal(r.razon, "patron_prohibido");
+  assert.match(r.motivo, /cierre|cese|traslad/);
+});
+
+test("revisar: anunciar cese del negocio se rechaza con razon=patron_prohibido", () => {
+  const r = revisar(
+    "Our business has ceased operations as of last month.",
+    ficha,
+  );
+  assert.equal(r.ok, false);
+  if (r.ok) return;
+  assert.equal(r.razon, "patron_prohibido");
+});
+
+test("revisar: anunciar traslado se rechaza con razon=patron_prohibido", () => {
+  const r = revisar(
+    "Nos hemos trasladar a la nueva ubicación en Calle Mayor 14.",
+    ficha,
+  );
+  assert.equal(r.ok, false);
+  if (r.ok) return;
+  assert.equal(r.razon, "patron_prohibido");
+  assert.match(r.motivo, /cierre|cese|traslad/);
+});
+
+// ── RS.22, punto 3: texto presentado como la reseña del cliente ─────────────
+
+test("revisar: texto 'Reseña de Ana:' se rechaza con razon=texto_como_resena", () => {
+  const r = revisar(
+    "Estimado cliente: Reseña de Ana: I had high hopes for this place...",
+    ficha,
+  );
+  assert.equal(r.ok, false);
+  if (r.ok) return;
+  assert.equal(r.razon, "texto_como_resena");
+  assert.match(r.motivo, /reseña/);
+});
+
+test("revisar: bloque entre comillas que parece transcripción se rechaza con razon=texto_como_resena", () => {
+  const r = revisar(
+    'Le visitaríamos de nuevo. "I had high hopes and was disappointed".',
+    ficha,
+  );
+  assert.equal(r.ok, false);
+  if (r.ok) return;
+  assert.equal(r.razon, "texto_como_resena");
+  assert.match(r.motivo, /reseña/);
+});
+
+// ── Integración RS.22 con generarRespuesta ─────────────────────────────────
+
+test("generarRespuesta: redactor que anuncia cierre se retiene", async () => {
+  const redactorCierra: Redactor = {
+    async redactar(): Promise<string> {
+      return "Lamentamos informar que nuestro restaurante ha cerrado de forma permanente.";
+    },
+  };
+  const res = await generarRespuesta(reseña1, ficha, redactorCierra);
+  assert.equal("noDisponible" in res, true);
+  if (!("noDisponible" in res)) return;
+  assert.match(res.motivo, /cierre|cese|traslad/);
+});
+
+test("generarRespuesta: redactor que incluye texto como reseña se retiene", async () => {
+  const redactorTextoResena: Redactor = {
+    async redactar(): Promise<string> {
+      return "Gracias por su comentario. Reseña de Tourist22: I had high hopes...";
+    },
+  };
+  const res = await generarRespuesta(reseña1, ficha, redactorTextoResena);
+  assert.equal("noDisponible" in res, true);
+  if (!("noDisponible" in res)) return;
+  assert.match(res.motivo, /reseña/);
+});
+
+// ── RS.22: las 10 respuestas buenas del cierre de RS.4 siguen pasando ───────
+
+test("RS.4: las 10 respuestas correctas y sobrias siguen pasando (RS.22 no las rompe)", async () => {
+  const redactor = new RedactorFalso();
+  const textos = [
+    "Servicio impecable, volveré pronto.",
+    "La comida estuvo deliciosa y el trato fue muy amable.",
+    "Sin duda el mejor restaurante de la zona, repetiremos.",
+    "Buena atención, ambiente agradable y platos generosos.",
+    "Todo perfecto, gracias por una velada tan agradable.",
+    "El servicio fue rápido y la comida estaba caliente.",
+    "Muy recomendable, calidad y trato de primera.",
+    "Acudimos por recomendación y no nos defraudó.",
+    "Excelente relación calidad-precio, volveremos.",
+    "El personal fue muy atento en todo momento.",
+  ];
+  assert.ok(textos.length >= 10);
+  for (const texto of textos) {
+    const reseña: ReseñaNegocio = {
+      autor: "Cliente",
+      texto,
+      estrellas: 5,
+      fecha: "2024-04-01",
+      incompleta: false,
+      motivo: null,
+    };
+    const res = await generarRespuesta(reseña, ficha, redactor);
+    assert.equal(
+      "texto" in res,
+      true,
+      `la respuesta correcta para "${texto}" no debería haberse retenido`,
+    );
+  }
+});
