@@ -109,7 +109,7 @@ test("procesarLote con RegistradorSeguro no filtra credencial ni autores al log"
 
   // El lote procesa las dos reseñas (punto 2: el dato tiene que entrar al
   // log por el camino real, no por un espía externo).
-  assert.equal(lote.resultados.length, 2);
+  assert.equal(lote.resultado.resultados.length, 2);
 
   // El buffer tiene al menos un evento por reseña: 2 de "procesando
   // reseña N" y 2 de "redactando respuesta para reseña del autor".
@@ -188,7 +188,7 @@ test("RegistradorSeguro no rompe el lote cuando no hay sensibles que ocultar", a
     new RedactorFalso(),
     regs,
   );
-  assert.equal(lote.resultados.length, 2);
+  assert.equal(lote.resultado.resultados.length, 2);
   assert.ok(buffer.Eventos.length >= 4);
 });
 
