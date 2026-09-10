@@ -59,6 +59,17 @@ import {
   filasDelLote,
   type FilaPaquete,
 } from "./empaquetar.js";
+import {
+  ImportadorError,
+  type ImportadorReseñas,
+} from "./importadorReseñas.js";
+import {
+  ProgramadorImportacion,
+  type NegocioProgramado,
+  type ResultadoCicloNegocio,
+} from "./programadorImportacion.js";
+import type { CatalogoNegocios } from "./catalogoNegocios.js";
+import type { Notificador } from "./notificador.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuración pública
@@ -90,6 +101,44 @@ export interface OpcionesServidor {
    * (7 días). Si es `0` o negativo, los enlaces nunca caducan.
    */
   plazoCaducidadEnMs?: number;
+  /**
+   * Importador de reseñas para `POST /lotes/importar`. Si no se pasa, esa
+   * ruta responde 501 con un motivo comprensible: importar automáticamente
+   * es una capacidad opcional, no un requisito para levantar el servidor.
+   */
+  importador?: ImportadorReseñas;
+  /**
+   * RS.26 — seguimiento automático: si se pasa, `crearServidor` arma un
+   * `ProgramadorImportacion` (reutilizando `importador`) y lo arranca de
+   * inmediato con este intervalo. Requiere `importador` configurado; sin él
+   * se ignora (no tiene de dónde traer reseñas). El programador queda
+   * expuesto en `ServidorLevantado.programador` para registrar o quitar
+   * negocios sobre la marcha, y `cerrar()` lo detiene.
+   */
+  programadorImportacion?: {
+    intervaloMs: number;
+    /** Negocios bajo seguimiento desde el arranque. Se pueden sumar más después con `programador.registrarNegocio`. */
+    negocios?: NegocioProgramado[];
+    /** Hueco para el aviso al dueño (RS.28) o para logging del operador. */
+    alTerminarCiclo?: (resultados: ResultadoCicloNegocio[]) => void;
+    /**
+     * RS.27 — catálogo persistente. Si se pasa, el programador recarga los
+     * negocios guardados al arrancar (`cargarDesdeCatalogo`, ANTES de sumar
+     * `negocios`) y cada alta/baja posterior queda persistida: reiniciar el
+     * proceso con el mismo catálogo recupera el seguimiento sin tener que
+     * repetir `negocios` en las opciones.
+     */
+    catalogo?: CatalogoNegocios;
+    /**
+     * RS.28 — si se pasa, tras cada ciclo automático se avisa (vía
+     * `Notificador.avisar`) por cada negocio que produjo un paquete nuevo,
+     * con un enlace de descarga (RS.18) recién generado. Un fallo del aviso
+     * se registra en stderr y no interrumpe nada más: avisar es best-effort,
+     * el paquete ya quedó guardado y sigue disponible por las rutas de
+     * siempre aunque el aviso falle.
+     */
+    notificador?: Notificador;
+  };
 }
 
 /**
@@ -236,6 +285,30 @@ export interface SalidaProcesarLote {
   fichaFaltantes: string[];
 }
 
+/** Body aceptado por `POST /lotes/importar`. */
+export interface EntradaImportarLote {
+  /** Identificador del negocio para el proveedor de importación configurado. */
+  placeId: unknown;
+  /** Ficha del negocio (RS.2). */
+  ficha: unknown;
+  maxReseñas?: unknown;
+}
+
+export interface SalidaImportarLote {
+  /**
+   * Identificador para descargar el paquete, o `null` si no había reseñas
+   * nuevas que empaquetar (nada que entregar, no es un error).
+   */
+  id: string | null;
+  /** Cuántas trajo el proveedor en total y cuántas eran nuevas. */
+  totalRecibidas: number;
+  nuevas: number;
+  yaVistas: number;
+  conteos: { listas: number; paraRevision: number; fallaron: number };
+  resumen: ResumenDeQuejas;
+  fichaFaltantes: string[];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Servidor HTTP
 // ─────────────────────────────────────────────────────────────────────────────
@@ -248,6 +321,12 @@ export interface ServidorLevantado {
   /** Cierra el listener y vacía el almacén. Tras cerrar, cualquier petición
    *  falla. El test lo usa para limpiar entre casos. */
   cerrar(): Promise<void>;
+  /**
+   * Presente solo si se pasó `opciones.programadorImportacion`. Permite
+   * registrar o quitar negocios del seguimiento automático (RS.26) sin
+   * reiniciar el servidor.
+   */
+  programador?: ProgramadorImportacion;
 }
 
 const ENCABEZADOS_CSV: ReadonlyArray<[string, string]> = [
@@ -261,7 +340,7 @@ const ENCABEZADOS_CSV: ReadonlyArray<[string, string]> = [
  * operador del servicio usa en producción y la que los tests invocan para
  * hablarle con `fetch`.
  */
-export function crearServidor(
+export async function crearServidor(
   opciones: OpcionesServidor | undefined,
   almacen: AlmacenDeLotes,
 ): Promise<ServidorLevantado> {
@@ -273,6 +352,71 @@ export function crearServidor(
     opciones?.plazoCaducidadEnMs !== undefined && opciones.plazoCaducidadEnMs > 0
       ? opciones.plazoCaducidadEnMs
       : PLAZO_CADUCIDAD_DEFECTO_MS;
+  const importador = opciones?.importador;
+
+  // RS.28: la URL base no se conoce hasta que `server.listen` resuelve (el
+  // puerto real, si se pidió `0`). Se guarda en una caja mutable porque el
+  // aviso solo se arma cuando el temporizador dispara un ciclo, que siempre
+  // ocurre DESPUÉS de que el servidor ya esté escuchando.
+  const urlBase = { valor: "" };
+
+  // RS.26: si se pidió seguimiento automático y hay de dónde importar, se
+  // arma el programador ANTES de levantar el listener para que quede listo
+  // (y arrancado) en cuanto el servidor resuelva.
+  let programador: ProgramadorImportacion | undefined;
+  if (opciones?.programadorImportacion !== undefined && importador !== undefined) {
+    const cfg = opciones.programadorImportacion;
+    const notificador = cfg.notificador;
+
+    // RS.28: al terminar cada ciclo automático, avisa por cada negocio que
+    // produjo un paquete. Nunca deja escapar el fallo de un aviso: el
+    // paquete ya quedó guardado y sigue disponible por las rutas de
+    // siempre aunque el webhook de aviso esté caído.
+    const alTerminarCiclo = (resultados: ResultadoCicloNegocio[]): void => {
+      cfg.alTerminarCiclo?.(resultados);
+      if (notificador === undefined) return;
+      for (const resultado of resultados) {
+        if (resultado.paquete === undefined) continue;
+        const enlace = almacen.generarEnlace(resultado.paquete.id, plazoCaducidadMs);
+        const ficha = programador
+          ?.listarNegocios()
+          .find((n) => n.placeId === resultado.placeId)?.ficha;
+        void notificador
+          .avisar({
+            placeId: resultado.placeId,
+            nombreNegocio: ficha?.nombre ?? resultado.placeId,
+            paqueteId: resultado.paquete.id,
+            conteos: resultado.paquete.conteos,
+            enlaceUrl: `${urlBase.valor}/enlace/${enlace.token}`,
+          })
+          .catch((error: unknown) => {
+            const mensaje = error instanceof Error ? error.message : String(error);
+            process.stderr.write(
+              `[servicio] no se pudo avisar del paquete del negocio ${resultado.placeId}: ${mensaje}\n`,
+            );
+          });
+      }
+    };
+
+    programador = new ProgramadorImportacion(
+      importador,
+      async (negocio, reseñas) => {
+        const paquete = await empaquetarYGuardar(reseñas, negocio.ficha, { redactor, almacen });
+        return { id: paquete.id, conteos: paquete.conteos };
+      },
+      undefined,
+      alTerminarCiclo,
+      cfg.catalogo,
+    );
+    // Primero lo guardado (sobrevive a un reinicio con el mismo catálogo),
+    // después la lista explícita de esta llamada: si un `placeId` aparece
+    // en ambos, la ficha de `negocios` gana (es la más reciente a ojos de
+    // quien arranca el proceso).
+    await programador.cargarDesdeCatalogo();
+    for (const negocio of cfg.negocios ?? []) {
+      await programador.registrarNegocio(negocio);
+    }
+  }
 
   return new Promise<ServidorLevantado>((resolver, rechazar) => {
     const server: Server = http.createServer((req, res) => {
@@ -285,6 +429,7 @@ export function crearServidor(
         redactor,
         maxReseñasPorLote,
         plazoCaducidadMs,
+        importador,
       }).catch((error: unknown) => {
         const mensaje = error instanceof Error ? error.message : String(error);
         process.stderr.write(`[servicio] error no controlado: ${mensaje}\n`);
@@ -308,12 +453,18 @@ export function crearServidor(
       }
       const puertoReal = direccion.port;
       const url = `http://${host}:${puertoReal}`;
+      urlBase.valor = url;
+      if (programador !== undefined && opciones?.programadorImportacion !== undefined) {
+        programador.iniciar(opciones.programadorImportacion.intervaloMs);
+      }
       resolver({
         puerto: puertoReal,
         url,
         cerrar: async () => {
+          programador?.detener();
           await cerrarServidor(server, almacen);
         },
+        ...(programador !== undefined ? { programador } : {}),
       });
     });
   });
@@ -337,6 +488,7 @@ interface ContextoManejo {
   redactor: Redactor;
   maxReseñasPorLote: number;
   plazoCaducidadMs: number;
+  importador: ImportadorReseñas | undefined;
 }
 
 async function manejarPeticion(
@@ -349,6 +501,11 @@ async function manejarPeticion(
 
   if (metodo === "POST" && url === "/lotes") {
     await manejarPOSTLotes(req, res, ctx);
+    return;
+  }
+
+  if (metodo === "POST" && url === "/lotes/importar") {
+    await manejarPOSTLoteImportar(req, res, ctx);
     return;
   }
 
@@ -481,34 +638,149 @@ async function manejarPOSTLotes(
 
   // Aviso al operador: las filas que no se pudieron parsear se devuelven en el
   // log del lote y NO cuentan para el tamaño, pero el lote sigue.
-  const loteProcesado = await procesarLote(
-    conversion.reseñas,
-    validacion.ficha,
-    ctx.redactor,
-  );
+  const paquete = await empaquetarYGuardar(conversion.reseñas, validacion.ficha, ctx);
+
+  const salida: SalidaProcesarLote = {
+    id: paquete.id,
+    conteos: paquete.conteos,
+    resumen: paquete.resumen,
+    fichaFaltantes: validacion.faltantes,
+  };
+
+  responderJSON(res, 200, salida);
+}
+
+/**
+ * Corre `procesarLote` sobre `reseñas`, arma el paquete (CSV + Markdown) y lo
+ * guarda en el almacén. Compartido entre `POST /lotes` (RS.14) y
+ * `POST /lotes/importar` (RS.25): ambos terminan igual una vez que tienen
+ * `ReseñaNegocio[]` en la mano — lo único que cambia es de dónde vienen.
+ */
+async function empaquetarYGuardar(
+  reseñas: ReseñaNegocio[],
+  ficha: FichaNegocio,
+  ctx: Pick<ContextoManejo, "redactor" | "almacen">,
+): Promise<{
+  id: string;
+  conteos: { listas: number; paraRevision: number; fallaron: number };
+  resumen: ResumenDeQuejas;
+}> {
+  const loteProcesado = await procesarLote(reseñas, ficha, ctx.redactor);
   const lote = loteProcesado.resultado;
 
   const resumen = resumirQuejas(lote);
-  const filas = filasDelLote(lote, conversion.reseñas);
+  const filas = filasDelLote(lote, reseñas);
   const csv = exportarCSV(filas);
-  const markdown = exportarMarkdown(lote, conversion.reseñas, validacion.ficha.nombre);
+  const markdown = exportarMarkdown(lote, reseñas, ficha.nombre);
 
   const id = randomUUID();
-  ctx.almacen.guardar(id, {
-    csv,
-    markdown,
-    filas,
-    ficha: validacion.ficha,
-  });
+  ctx.almacen.guardar(id, { csv, markdown, filas, ficha });
 
-  const salida: SalidaProcesarLote = {
+  return {
     id,
-    conteos: {
-      listas: lote.listas,
-      paraRevision: lote.paraRevision,
-      fallaron: lote.fallaron,
-    },
+    conteos: { listas: lote.listas, paraRevision: lote.paraRevision, fallaron: lote.fallaron },
     resumen,
+  };
+}
+
+async function manejarPOSTLoteImportar(
+  req: IncomingMessage,
+  res: ServerResponse,
+  ctx: ContextoManejo,
+): Promise<void> {
+  if (ctx.importador === undefined) {
+    responderJSON(res, 501, {
+      motivo: "la importación automática no está configurada en este servidor.",
+    });
+    return;
+  }
+
+  const cuerpo = await leerCuerpo(req).catch((error: unknown) => {
+    const msg = error instanceof Error ? error.message : String(error);
+    return `__error__:${msg}`;
+  });
+  if (typeof cuerpo === "string" && cuerpo.startsWith("__error__:")) {
+    responderJSON(res, 400, {
+      motivo: `no se pudo leer el cuerpo de la petición: ${cuerpo.slice("__error__:".length)}`,
+    });
+    return;
+  }
+
+  let entrada: EntradaImportarLote;
+  try {
+    const parsed: unknown = JSON.parse(cuerpo);
+    if (!esObjeto(parsed)) {
+      responderJSON(res, 400, {
+        motivo: "el cuerpo debe ser un objeto JSON con 'placeId' y 'ficha'.",
+      });
+      return;
+    }
+    entrada = parsed as unknown as EntradaImportarLote;
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    responderJSON(res, 400, {
+      motivo: `JSON inválido en el cuerpo de la petición: ${msg}`,
+    });
+    return;
+  }
+
+  if (typeof entrada.placeId !== "string" || entrada.placeId.trim().length === 0) {
+    responderJSON(res, 400, { motivo: "falta 'placeId' (identificador del negocio)." });
+    return;
+  }
+
+  if (entrada.ficha === undefined || entrada.ficha === null) {
+    responderJSON(res, 400, { motivo: "falta la ficha del negocio." });
+    return;
+  }
+  const validacion = validarFicha(entrada.ficha);
+  if (!validacion.ok) {
+    responderJSON(res, 400, { motivo: `ficha inválida: ${validacion.motivo}` });
+    return;
+  }
+
+  let importacion;
+  try {
+    importacion = await ctx.importador.importarNuevas(entrada.placeId);
+  } catch (error: unknown) {
+    const msg = error instanceof ImportadorError ? error.message : "no se pudo importar el lote.";
+    responderJSON(res, 502, { motivo: msg });
+    return;
+  }
+
+  const maxEfectivo = limiteDePeticion(entrada.maxReseñas, ctx.maxReseñasPorLote);
+  if (importacion.reseñas.length > maxEfectivo) {
+    responderJSON(res, 400, {
+      motivo:
+        `el proveedor devolvió ${importacion.reseñas.length} reseñas nuevas y el máximo ` +
+        `configurado es ${maxEfectivo}. Ajuste el tope o procese en partes.`,
+    });
+    return;
+  }
+
+  if (importacion.reseñas.length === 0) {
+    const salidaVacia: SalidaImportarLote = {
+      id: null,
+      totalRecibidas: importacion.totalRecibidas,
+      nuevas: 0,
+      yaVistas: importacion.yaVistas,
+      conteos: { listas: 0, paraRevision: 0, fallaron: 0 },
+      resumen: resumirQuejas({ resultados: [], listas: 0, paraRevision: 0, fallaron: 0 }),
+      fichaFaltantes: validacion.faltantes,
+    };
+    responderJSON(res, 200, salidaVacia);
+    return;
+  }
+
+  const paquete = await empaquetarYGuardar(importacion.reseñas, validacion.ficha, ctx);
+
+  const salida: SalidaImportarLote = {
+    id: paquete.id,
+    totalRecibidas: importacion.totalRecibidas,
+    nuevas: importacion.nuevas,
+    yaVistas: importacion.yaVistas,
+    conteos: paquete.conteos,
+    resumen: paquete.resumen,
     fichaFaltantes: validacion.faltantes,
   };
 

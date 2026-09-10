@@ -98,6 +98,9 @@ import {
   type EntradaProcesarLote,
   type SalidaProcesarLote,
   type ServidorLevantado,
+  // RS.25: endpoint de importación automática.
+  type EntradaImportarLote,
+  type SalidaImportarLote,
 } from "./servicio.js";
 
 // RS.13: módulo de log con saneamiento de credenciales y nombres de
@@ -129,6 +132,51 @@ import {
   type TransporteHttp,
   type RespuestaBruta,
 } from "./redactorReal.js";
+
+// Importador de reseñas: automatiza el copiar/pegar manual para escalar a
+// varios negocios sin intervención por cliente en cada corrida.
+import {
+  ImportadorReseñas,
+  ImportadorError,
+  AlmacenImportacionEnMemoria,
+  AlmacenImportacionSqlite,
+  crearTransporteImportacionReal,
+  TransporteImportacionReal,
+  type ReseñaImportada,
+  type TransporteImportacion,
+  type AlmacenImportacion,
+  type ResultadoImportacion,
+} from "./importadorReseñas.js";
+
+// RS.26: programador de importación automática (seguimiento periódico de
+// negocios, sin que nadie llame al endpoint a mano).
+import {
+  ProgramadorImportacion,
+  TemporizadorReal,
+  type NegocioProgramado,
+  type FuenteDeReseñasNuevas,
+  type ManejadorDeReseñasNuevas,
+  type ResultadoCicloNegocio,
+  type Temporizador,
+  type ManejadorDeTemporizador,
+  type PaqueteProducido,
+} from "./programadorImportacion.js";
+
+// RS.27: catálogo persistente de negocios (sobrevive a reiniciar el proceso).
+import {
+  CatalogoNegociosEnMemoria,
+  CatalogoNegociosSqlite,
+  type CatalogoNegocios,
+} from "./catalogoNegocios.js";
+
+// RS.28: aviso automático cuando un negocio tiene un paquete nuevo listo.
+import {
+  NotificadorWebhook,
+  NotificadorError,
+  crearNotificadorWebhook,
+  type Notificador,
+  type AvisoPaquete,
+} from "./notificador.js";
 
 export const version: string = "0.0.0";
 
@@ -173,6 +221,41 @@ export {
   crearTransporteReal,
   type TransporteHttp,
   type RespuestaBruta,
+  // Importador de reseñas: extracción automática, sustituye el copiar/pegar.
+  ImportadorReseñas,
+  ImportadorError,
+  AlmacenImportacionEnMemoria,
+  AlmacenImportacionSqlite,
+  crearTransporteImportacionReal,
+  TransporteImportacionReal,
+  type ReseñaImportada,
+  type TransporteImportacion,
+  type AlmacenImportacion,
+  type ResultadoImportacion,
+  // RS.26: programador de importación automática.
+  ProgramadorImportacion,
+  TemporizadorReal,
+  type NegocioProgramado,
+  type FuenteDeReseñasNuevas,
+  type ManejadorDeReseñasNuevas,
+  type ResultadoCicloNegocio,
+  type Temporizador,
+  type ManejadorDeTemporizador,
+  // RS.25: tipos del endpoint de importación automática.
+  type EntradaImportarLote,
+  type SalidaImportarLote,
+  // RS.27: catálogo persistente de negocios.
+  CatalogoNegociosEnMemoria,
+  CatalogoNegociosSqlite,
+  type CatalogoNegocios,
+  // RS.28: aviso automático de paquete listo.
+  NotificadorWebhook,
+  NotificadorError,
+  crearNotificadorWebhook,
+  type Notificador,
+  type AvisoPaquete,
+  // RS.26: tipo del paquete producido (para quien compone alTerminarCiclo).
+  type PaqueteProducido,
 };
 export { CABECERA_CSV, SEPARADOR_CSV, BOM_UTF8 };
 export type {
